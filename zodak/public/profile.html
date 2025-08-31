@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Профиль — mebelplace</title>
+<link rel="stylesheet" href="/common.css">
+<script src="/domain-notice.js" defer></script>
+<style>
+  :root{
+    --bg:#f4f5fa; --card:#ffffff; --text:#0f172a; --muted:#6b7280; --line:#e6e7ee;
+    --accent:#f59e0b; --accent-ink:#8a5b00; --danger:#ef4444;
+    --radius:18px; --tap:54px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,Inter,Roboto,Segoe UI,sans-serif}
+  header{position:sticky;top:0;z-index:10;padding:calc(env(safe-area-inset-top)+12px) 18px 12px;background:#f7f7fbcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+  .title{font-size:28px;font-weight:800}
+  main{max-width:720px;margin:0 auto;padding:12px 16px calc(110px + env(safe-area-inset-bottom))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .center{display:flex;flex-direction:column;align-items:center;text-align:center}
+  .avatar{width:120px;height:120px;border-radius:120px;background:#ffedd5;display:grid;place-items:center;border:6px solid #fff;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+  .avatar svg{width:56px;height:56px;fill:#f59e0b}
+  .name{margin-top:14px;font-weight:800;font-size:22px;text-transform:lowercase}
+  .btn-xl{margin-top:14px;display:inline-flex;align-items:center;justify-content:center;height:56px;padding:0 18px;border-radius:14px;border:0;background:var(--accent);color:#fff;font-weight:800;box-shadow:0 6px 16px rgba(245,158,11,.25);cursor:pointer}
+  .btn-xl:active{transform:translateY(1px)}
+  .list{margin-top:14px}
+  .cell{display:flex;align-items:center;justify-content:space-between;padding:16px;border-radius:14px;background:#f7f7fb;border:1px solid var(--line);margin:10px 0}
+  .label{font-size:16px}
+  /* iOS-like switch */
+  .switch{position:relative;width:62px;height:36px;flex:0 0 62px}
+  .switch input{display:none}
+  .track{position:absolute;inset:0;background:#e5e7eb;border-radius:999px;border:1px solid #d1d5db;transition:.25s}
+  .thumb{position:absolute;top:3px;left:3px;width:30px;height:30px;border-radius:30px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:.25s}
+  .switch input:checked ~ .track{background:var(--accent)}
+  .switch input:checked ~ .thumb{left:29px}
+  .switch input:disabled ~ .track{opacity:.5}
+  /* logout */
+  .logout{margin-top:18px;display:flex;align-items:center;justify-content:center;height:56px;border-radius:14px;border:2px solid #fecaca;background:#fff;color:var(--danger);font-weight:800}
+  /* bottom nav */
+  nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;gap:8px;justify-content:space-around;padding:8px 16px calc(env(safe-area-inset-bottom)+8px);background:#fff;border-top:1px solid var(--line)}
+  nav.bottom a{flex:1;text-align:center;text-decoration:none;color:#6b7280;font-size:12px}
+  nav.bottom .active{color:#f59e0b}
+  nav.bottom svg{display:block;margin:0 auto 4px}
+  /* modal edit */
+  .sheet{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-end;justify-content:center}
+  .sheet .box{width:100%;max-width:720px;background:#fff;border-radius:20px 20px 0 0;border:1px solid var(--line);padding:16px}
+  .field{margin:10px 0}
+  .input{width:100%;height:var(--tap);border-radius:12px;border:1px solid var(--line);padding:0 14px;font-size:16px;background:#fff}
+  .row{display:flex;gap:10px}
+  .btn{height:var(--tap);padding:0 14px;border-radius:12px;border:1px solid var(--line);background:#f5f6fb;font-weight:700}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .msg{display:none;margin:10px 0;padding:10px;border-radius:12px;font-size:14px}
+  .ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}
+  .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
+  .banner{display:none;margin:12px 0;padding:10px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#8a5b00}
+</style>
+</head>
+<body>
+<header>
+  <div class="title">Профиль</div>
+  <div style="flex:1"></div>
+</header>
+
+<main>
+  <div id="sess" class="banner">Сессия истекла. <a href="/login.html?next=/profile.html">Войти снова</a></div>
+
+  <div class="card center">
+    <div class="avatar" aria-hidden="true">
+      <!-- user icon -->
+      <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-5 0-9 2.5-9 5.5A1.5 1.5 0 0 0 4.5 21h15A1.5 1.5 0 0 0 21 19.5C21 16.5 17 14 12 14z"/></svg>
+    </div>
+    <div id="userName" class="name">—</div>
+    <button id="btnEdit" class="btn-xl">Редактировать профиль</button>
+
+    <div class="list" style="width:100%;max-width:640px">
+      <div class="cell" id="rowOrders">
+        <div class="label">Мои заказы</div>
+        <label class="switch">
+          <input id="swOrders" type="checkbox">
+          <div class="track"></div><div class="thumb"></div>
+        </label>
+      </div>
+
+      <div class="cell" id="rowSupport">
+        <div class="label">Служба поддержки</div>
+        <label class="switch">
+          <input id="swSupport" type="checkbox">
+          <div class="track"></div><div class="thumb"></div>
+        </label>
+      </div>
+
+      <div class="cell" id="rowPolicy">
+        <div class="label">Политика конфиденциальности</div>
+        <label class="switch" title="Управляется сервисом">
+          <input id="swPolicy" type="checkbox" disabled>
+          <div class="track"></div><div class="thumb"></div>
+        </label>
+      </div>
+    </div>
+
+    <button id="btnLogout" class="logout">Выйти из аккаунта</button>
+  </div>
+</main>
+
+<nav class="bottom">
+  <a href="/" aria-label="Видео">
+    <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5h8a3 3 0 0 1 3 3v8H5V8a3 3 0 0 1 3-3zm9 12v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-1zM9 8v6l5-3z"/></svg>
+    Видео
+  </a>
+  <a href="/requests.html" aria-label="Заявки">
+    <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10a2 2 0 0 1 2 2v14l-7-3l-7 3V5a2 2 0 0 1 2-2z"/></svg>
+    Заявки
+  </a>
+  <a href="/favorites.html" aria-label="Избранные">
+    <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="m12 17.27l6.18 3.73l-1.64-7.03L21 9.24l-7.19-.61L12 2 10.19 8.63 3 9.24l4.46 4.73L5.82 21z"/></svg>
+    Избранные
+  </a>
+  <a href="/profile.html" class="active" aria-label="Профиль">
+    <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-5 0-9 2.5-9 5.5A1.5 1.5 0 0 0 4.5 21h15A1.5 1.5 0 0 0 21 19.5C21 16.5 17 14 12 14z"/></svg>
+    Профиль
+  </a>
+</nav>
+
+<!-- Sheet: редактировать профиль -->
+<div id="sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong id="editTitle">Редактировать профиль</strong>
+      <button id="btnClose" class="btn">Закрыть</button>
+    </div>
+    <div id="mErr" class="msg err"></div>
+    <div id="mOk" class="msg ok"></div>
+
+    <div class="field">
+      <label for="name" class="label" style="display:block;margin-bottom:8px;color:var(--muted)">Отображаемое имя</label>
+      <input id="name" class="input" placeholder="Как к тебе обращаться?">
+    </div>
+
+    <div class="row" style="justify-content:flex-end;margin-top:10px">
+      <button id="btnSave" class="btn primary">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=> {
+  const $=s=>document.querySelector(s);
+  const apiBase='';
+  const state = { me:null, sessionLost:false };
+
+  function token(){ try{return localStorage.getItem('token')||''}catch{return''} }
+  function hdr(){ const h={'Content-Type':'application/json'}; const t=token(); if(t) h['Authorization']='Bearer '+t; return h }
+  function show(n){n&&(n.style.display='block')} function hide(n){n&&(n.style.display='none')}
+  function setOk(m){ const n=$('#mOk'); n.textContent=m; show(n); hide($('#mErr')) }
+  function setErr(m){ const n=$('#mErr'); n.textContent=m; show(n); hide($('#mOk')) }
+
+  function sessionLost(){ state.sessionLost=true; show($('#sess')) }
+  function sessionRestore(){ state.sessionLost=false; hide($('#sess')) }
+
+  async function j(path,opts){opts=opts||{};const r=await fetch(apiBase+path,{method:opts.method||'GET',headers:Object.assign({},hdr(),opts.headers||{}),body:opts.body?JSON.stringify(opts.body):undefined});const ct=r.headers.get('content-type')||'';const d=ct.includes('json')?await r.json().catch(()=> ({})):await r.text().catch(()=> '');if(!r.ok){ if(r.status===401){ sessionLost(); throw new Error('unauth') } throw new Error((d&&d.error)||('HTTP '+r.status)) } return d}
+
+  function displayName(me){
+    if (me.name && me.name.trim().length>0) return me.name.trim();
+    if (me.email) return me.email.split('@')[0];
+    return 'пользователь';
+  }
+
+  async function loadMe(){
+    try{
+      const me = await j('/api/me');
+      state.me = me; sessionRestore();
+      $('#userName').textContent = displayName(me);
+      $('#name').value = me.name||'';
+    }catch(e){
+      sessionLost();
+    }
+  }
+
+  // edit sheet
+  function openSheet(){ show($('#sheet')); $('#name').focus() }
+  function closeSheet(){ hide($('#sheet')); hide($('#mOk')); hide($('#mErr')) }
+
+  async function save(){
+    const name = $('#name').value.trim();
+    if (name.length < 2){ setErr('Имя слишком короткое'); return }
+    $('#btnSave').disabled=true; $('#btnSave').textContent='Сохраняем…';
+    try{
+      await j('/api/me',{method:'PUT',body:{name}});
+      setOk('Сохранено');
+      $('#userName').textContent = name;
+      setTimeout(()=>{ closeSheet() }, 600);
+    }catch(e){
+      if (e.message==='unauth') setErr('Нужно войти заново');
+      else setErr(e.message||'Ошибка сохранения');
+    }finally{
+      $('#btnSave').disabled=false; $('#btnSave').textContent='Сохранить';
+    }
+  }
+
+  // toggles -> навигация/действие
+  function initToggles(){
+    const go = url => { location.href = url };
+    $('#rowOrders').addEventListener('click', e=>{
+      if (e.target.id!=='swOrders') $('#swOrders').checked=!$('#swOrders').checked;
+      if ($('#swOrders').checked) go('/requests.html');
+    });
+    $('#rowSupport').addEventListener('click', e=>{
+      if (e.target.id!=='swSupport') $('#swSupport').checked=!$('#swSupport').checked;
+      if ($('#swSupport').checked) go('/support.html'); // сделаем страницу позже; временно можно mailto:
+      // location.href='mailto:support@zodak.test?subject=Вопрос%20по%20сервису';
+    });
+    $('#rowPolicy').addEventListener('click', ()=>{ location.href='/legal/terms' });
+  }
+
+  function logout(){ localStorage.removeItem('token'); location.replace('/login.html') }
+
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    // если токена вообще нет — уводим на логин
+    if (!token()) { location.replace('/login.html?next=/profile.html'); return }
+    await loadMe();
+    initToggles();
+
+    $('#btnEdit').onclick=openSheet;
+    $('#btnClose').onclick=closeSheet;
+    $('#sheet').addEventListener('click', e=>{ if (e.target.id==='sheet') closeSheet() });
+    $('#btnSave').onclick=save;
+    $('#btnLogout').onclick=logout;
+
+    // если токен обновился в другой вкладке — оживим сессию
+    window.addEventListener('storage', (e)=>{ if(e.key==='token' && e.newValue) loadMe() });
+  });
+})();
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  const el = Array.from(document.querySelectorAll('*')).find(n => /Политика конфиденциальности/i.test(n.textContent||''));
+  if (el) { el.style.cursor='pointer'; el.addEventListener('click', ()=> location.href='/legal/privacy.html'); }
+});
+</script>
+
+</body>
+</html>

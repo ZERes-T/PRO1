@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Домен сервиса — mebelplace</title>
+<link rel="stylesheet" href="/common.css">
+<style>
+  :root{--accent:#f59e0b;--line:#e6e7ee}
+  html,body{height:100%}
+  body{display:grid;place-items:center;background:#0b0b0f;color:#fff}
+  .card{width:min(720px,92vw);background:#0f1117;border:1px solid rgba(255,255,255,.12);
+        border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  h1{margin:0 0 10px;font-weight:900}
+  .muted{color:#cbd5e1}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .pill{padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:#0e0f12}
+  .ok{color:#10b981}.warn{color:#f59e0b}
+  .btn{height:44px;border-radius:12px;border:1px solid var(--line);padding:0 14px;font-weight:900}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#111}
+  .grid{display:grid;gap:12px;margin-top:12px}
+  code{background:#0e0f12;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:4px 8px}
+</style>
+</head>
+<body>
+  <main class="card">
+    <h1>Домен сервиса</h1>
+    <p class="muted">Здесь можно сверить, где вы находитесь, и перейти на основной домен, когда он будет активирован.</p>
+
+    <div class="grid">
+      <div>Текущий хост: <code id="curHost"></code></div>
+      <div class="row">
+        <span class="pill">Тестовый: <b>zodak-test.ru</b></span>
+        <span class="pill">Локалка: <b>192.168.1.20</b></span>
+        <span class="pill">Планируемый основной: <b>mebelplace.com.kz</b></span>
+      </div>
+
+      <div class="row">
+        <button id="stay" class="btn">Остаться здесь</button>
+        <a id="goMain" class="btn btn-primary" href="https://mebelplace.com.kz" rel="noopener">Открыть основной</a>
+        <a class="btn" href="/" rel="noopener">На главную</a>
+      </div>
+
+      <small class="muted">
+        Подсказка: если это локалка, используйте <code>http://192.168.1.20/</code>.
+        Для теста баннера «другой домен» можно зайти через <code>http://zodak-test.ru/</code>.
+      </small>
+    </div>
+  </main>
+
+<script>
+  const cur = location.hostname;
+  document.getElementById('curHost').textContent = cur;
+  document.getElementById('stay').onclick = () => history.back();
+
+  // если основной домен ещё не поднят — просто остаёмся
+  const mainBtn = document.getElementById('goMain');
+  if (cur === 'mebelplace.com.kz') {
+    mainBtn.textContent = 'Вы уже на основном';
+    mainBtn.classList.remove('btn-primary');
+    mainBtn.classList.add('btn');
+    mainBtn.removeAttribute('href');
+  }
+</script>
+</body>
+</html>

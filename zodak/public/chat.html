@@ -1,0 +1,247 @@
+<!doctype html><html lang="ru"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Чат — Zodak</title>
+
+<link rel="stylesheet" href="/common.css">
+<script src="/domain-notice.js" defer></script>
+
+<style>
+:root{--bg:#0b0b10;--card:#15151c;--text:#eef1f6;--muted:#9aa3ad;--line:#232536;--btn:#1f2937;--btnh:#253043;--tap:52px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,Inter,Roboto,sans-serif}
+header{position:sticky;top:0;z-index:10;padding:calc(env(safe-area-inset-top)+8px) 14px 8px;background:rgba(11,11,16,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+.logo{font-weight:800}.grow{flex:1}.muted{color:var(--muted)}
+main{padding:0 0 calc(84px + env(safe-area-inset-bottom));max-width:1100px;margin:0 auto;display:flex;min-height:100dvh}
+.side{width:360px;max-width:40%;border-right:1px solid var(--line)}
+@media(max-width:860px){ .side{display:none} }
+.list{padding:10px}
+.card{background:#15151c;border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px}
+.item{cursor:pointer}
+.chat{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{position:sticky;top:56px;padding:10px 12px;background:rgba(11,11,16,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:6}
+@media(max-width:860px){ .topbar{top:0} }
+.msgs{flex:1;overflow:auto;padding:10px}
+.msg{max-width:78%;padding:10px 12px;border-radius:14px;margin:8px 10px;white-space:pre-wrap;word-wrap:break-word}
+.me{background:#223147;border:1px solid #2f3e5a;margin-left:auto}
+.them{background:#1b1e2a;border:1px solid #2a3146}
+.composer{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px 12px calc(env(safe-area-inset-bottom)+8px);background:rgba(11,11,16,.9);backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+input,textarea{height:var(--tap);padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#0f1117;color:#eef1f6;font-size:16px}
+textarea{height:auto;min-height:var(--tap);max-height:40dvh;resize:vertical}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:var(--tap);padding:0 14px;border-radius:12px;border:1px solid #2a3343;background:var(--btn);color:#fff;cursor:pointer;font-weight:600}
+.btn:hover{background:#253043} .btn[disabled]{opacity:.6;cursor:not-allowed}
+nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:9;display:none}
+@media(max-width:860px){ nav.bottom{display:flex;gap:10px;justify-content:space-around;padding:8px 12px calc(env(safe-area-inset-bottom)+8px);background:rgba(11,11,16,.9);border-top:1px solid var(--line)} nav.bottom a{flex:1}}
+.net{display:none;color:#fff;background:#40220f;border:1px solid #6a3917;padding:8px 10px;border-radius:10px;margin:10px}
+.badge{display:inline-flex;align-items:center;justify-content:center;height:20px;padding:0 8px;border-radius:999px;background:#0e2533;border:1px solid #123;color:#9fe7ff;font-size:12px}
+.hint{font-size:12px;color:var(--muted)}
+.sess{display:none;background:#312407;border:1px solid #6a4a17;color:#ffe8b3;padding:8px 10px;border-radius:10px;margin:10px}
+</style></head><body>
+<header>
+  <a class="btn btn-ghost" href="/">←</a>
+  <div class="logo">Чат</div>
+  <div class="grow"></div>
+  <a class="btn btn-ghost" href="/profile.html" id="userTag">...</a>
+</header>
+
+<main>
+  <aside class="side">
+    <div id="net" class="net">Нет соединения. Сообщения могут не доставляться.</div>
+    <div id="sess" class="sess">Сессия истекла. <a href="/login.html?next=/chat.html" class="btn" style="margin-left:8px">Войти снова</a></div>
+    <div class="list" id="dialogsBox">
+      <div class="muted">Загружаем диалоги…</div>
+    </div>
+    <div class="card">
+      <div class="muted" style="margin-bottom:6px">Новый диалог по ID пользователя</div>
+      <div style="display:flex;gap:8px">
+        <input id="peerId" inputmode="numeric" placeholder="UID">
+        <button class="btn" id="btnStart">Открыть</button>
+      </div>
+      <div class="hint" style="margin-top:6px">Напиши первое сообщение, диалог создастся автоматически.</div>
+    </div>
+  </aside>
+
+  <section class="chat">
+    <div class="topbar">
+      <div id="chatTitle" class="muted">Выбери диалог слева</div>
+    </div>
+    <div class="msgs" id="msgs"></div>
+  </section>
+</main>
+
+<div class="composer">
+  <textarea id="msg" placeholder="Сообщение" style="flex:1" disabled></textarea>
+  <button class="btn" id="btnSend" disabled>Отправить</button>
+</div>
+
+<nav class="bottom">
+  <a href="/" class="btn">Лента</a>
+  <a href="/requests.html" class="btn btn-ghost">Заявки</a>
+  <a href="/chat.html" class="btn">Чат</a>
+  <a href="/profile.html" class="btn btn-ghost">Профиль</a>
+</nav>
+
+<script>
+(()=> {
+  const $=s=>document.querySelector(s);
+  const apiBase='';
+  const state={ me:null, active:{dialogId:null, peerId:null}, msgs:[], polling:false, backoff:2000, maxBackoff:15000, pollTimer:null, lastCount:0, sessionLost:false };
+
+  // всегда берём актуальный токен из localStorage
+  function getToken(){ try{ return localStorage.getItem('token')||'' }catch{ return '' } }
+  function hdr(){ const t=getToken(); const h={'Content-Type':'application/json'}; if(t) h['Authorization']='Bearer '+t; return h }
+  function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function show(n){n&&(n.style.display='block')} function hide(n){n&&(n.style.display='none')}
+
+  function updNet(){ navigator.onLine ? hide($('#net')) : show($('#net')) }
+  addEventListener('online', ()=>{ updNet(); if(!state.sessionLost) startPolling() });
+  addEventListener('offline', ()=>{ updNet(); stopPolling() });
+  updNet();
+
+  // «мягкий» JSON fetch: 401 не рушит токен, а поднимает флаг сессии
+  async function j(path,opts){ opts=opts||{}; const r=await fetch(apiBase+path,{method:opts.method||'GET',headers:Object.assign({},hdr(),opts.headers||{}),body:opts.body?JSON.stringify(opts.body):undefined}); const ct=r.headers.get('content-type')||''; const d=ct.includes('json')?await r.json().catch(()=> ({})):await r.text().catch(()=> ''); if(!r.ok){ if(r.status===401){ onSessionLost(); throw new Error('unauthorized') } throw new Error((d&&d.error)||('HTTP '+r.status)) } return d }
+
+  function onSessionLost(){
+    if (state.sessionLost) return;
+    state.sessionLost = true;
+    show($('#sess'));
+    $('#msg').disabled=true; $('#btnSend').disabled=true;
+    stopPolling();
+  }
+  function onSessionRestore(){
+    state.sessionLost = false;
+    hide($('#sess'));
+    if (state.active.peerId){ $('#msg').disabled=false; $('#btnSend').disabled=false; startPolling() }
+  }
+
+  // если токен поменяли в другой вкладке — подхватываем
+  window.addEventListener('storage', (e)=>{
+    if (e.key==='token'){
+      if (e.newValue) { onSessionRestore(); initMe(false) }
+      else { onSessionLost() }
+    }
+  });
+
+  async function initMe(hardRedirectIfMissing=true){
+    const t = getToken();
+    if (!t){ if(hardRedirectIfMissing) location.replace('/login.html?next=/chat.html'); return }
+    try{
+      const me = await j('/api/me');
+      state.me=me; $('#userTag').textContent=me.name||me.email||('id '+me.id);
+      onSessionRestore();
+    }catch(e){
+      // если прямо /api/me не пустит — только тогда уводим на логин
+      if (hardRedirectIfMissing) location.replace('/login.html?next=/chat.html');
+      else onSessionLost();
+      return;
+    }
+  }
+
+  function renderDialog(d){
+    const you = d.a_id===state.me.id ? d.b_id : d.a_id;
+    const el=document.createElement('div'); el.className='card item'; el.dataset.did=d.id; el.dataset.peer=you;
+    el.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px">
+      <div><strong>UID ${esc(you)}</strong></div>
+      <div class="muted" style="font-size:12px">${esc(d.updated_at||'')}</div>
+    </div>`;
+    el.onclick=()=>openDialog(d.id, you);
+    return el;
+  }
+
+  async function loadDialogs(){
+    try{
+      const out = await j('/api/dialogs');
+      const arr = (out.items||out)||[];
+      const box=$("#dialogsBox"); box.innerHTML='';
+      if(arr.length===0){ box.innerHTML='<div class="muted">Диалогов ещё нет</div>'; return }
+      arr.forEach(d=>box.appendChild(renderDialog(d)));
+    }catch(e){
+      // если сессия потеряна — UI уже показал баннер
+      if (e.message!=='unauthorized') $("#dialogsBox").innerHTML='<div class="muted">Ошибка загрузки</div>';
+    }
+  }
+
+  function renderMsgs(list){
+    const box=$("#msgs"); const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 30;
+    box.innerHTML='';
+    list.forEach(m=>{
+      const mine = m.sender_id===state.me.id;
+      const b=document.createElement('div'); b.className='msg '+(mine?'me':'them');
+      b.innerHTML=esc(m.text||'');
+      box.appendChild(b);
+    });
+    if (atBottom || state.lastCount===0) box.scrollTop=box.scrollHeight;
+    state.lastCount=list.length;
+  }
+
+  async function openDialog(did, peer){
+    state.active.dialogId=did; state.active.peerId=peer;
+    $('#chatTitle').textContent='Диалог с UID '+peer;
+    if (!state.sessionLost){ $('#msg').disabled=false; $('#btnSend').disabled=false; }
+    await refreshMessages();
+    j('/api/messages/read',{method:'POST',body:{dialog_id: did}}).catch(()=>{});
+    startPolling();
+  }
+
+  async function refreshMessages(){
+    if(!state.active.dialogId) return;
+    try{
+      const out = await j('/api/messages?dialog_id='+encodeURIComponent(state.active.dialogId));
+      const arr = (out.items||out)||[];
+      state.msgs = arr;
+      renderMsgs(arr);
+    }catch(e){
+      if (e.message!=='unauthorized') console.warn('messages error', e);
+    }
+  }
+
+  function startPolling(){
+    stopPolling();
+    if (state.sessionLost || !navigator.onLine) return;
+    state.polling=true; state.backoff=2000;
+    const tick=async ()=>{
+      if(!state.polling||!state.active.dialogId) return;
+      try{
+        await refreshMessages();
+        state.backoff=2000;
+      }catch(e){
+        if (e.message==='unauthorized'){ onSessionLost(); return }
+        state.backoff=Math.min(state.backoff+2000, state.maxBackoff);
+      }finally{
+        if (state.polling && !state.sessionLost) state.pollTimer=setTimeout(tick, state.backoff);
+      }
+    };
+    state.pollTimer=setTimeout(tick, state.backoff);
+  }
+  function stopPolling(){ state.polling=false; if(state.pollTimer){ clearTimeout(state.pollTimer); state.pollTimer=null } }
+
+  async function sendMessage(){
+    if (state.sessionLost) return;
+    const t=$('#msg').value.trim(); if(!t||!state.active.peerId) return;
+    state.msgs.push({sender_id:state.me.id,text:t});
+    renderMsgs(state.msgs);
+    $('#msg').value='';
+    try{
+      await j('/api/messages/send',{method:'POST',body:{peer_id:Number(state.active.peerId),text:t}});
+      await refreshMessages();
+    }catch(e){
+      if (e.message==='unauthorized'){ onSessionLost(); return }
+      alert('Не отправлено: '+e.message);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    await initMe(true);           // проверяем /api/me; если совсем нет токена — уводим на логин
+    await loadDialogs();
+    $('#btnSend').onclick=sendMessage;
+    $('#msg').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMessage() }});
+    $('#btnStart').onclick=()=>{
+      const pid = Number($('#peerId').value.trim()); if(!pid) return;
+      $('#chatTitle').textContent='Новый диалог с UID '+pid; state.active={dialogId:null, peerId:pid};
+      if (!state.sessionLost){ $('#msg').disabled=false; $('#btnSend').disabled=false; }
+      $('#msgs').innerHTML='<div class="card">Напиши первое сообщение…</div>'; stopPolling();
+    };
+    // фоновый пинг на восстановление: если токен вернулся — оживляем UI
+    setInterval(()=>{ if(getToken() && state.sessionLost) initMe(false) }, 5000);
+  });
+})();
+</script>
+</body></html>

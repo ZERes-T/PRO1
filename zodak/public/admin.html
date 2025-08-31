@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#0b0b0f"/>
+  <title>Админка — Zodak</title>
+
+  <link rel="stylesheet" href="/common.css">
+  <script src="/domain-notice.js" defer></script>
+
+  <style>
+    :root{--bg:#0b0b10;--card:#15151c;--text:#eef1f6;--muted:#9aa3ad;--line:#232536;--btn:#1f2937;--btnh:#253043;--tap:48px}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,Inter,Roboto,Segoe UI,sans-serif}
+    a{color:#6ee7ff;text-decoration:none}
+    header{position:sticky;top:0;z-index:10;padding:calc(env(safe-area-inset-top)+8px) 14px 8px;background:rgba(11,11,16,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+    .logo{font-weight:800}.grow{flex:1}
+    main{max-width:1000px;margin:0 auto;padding:12px 12px calc(80px + env(safe-area-inset-bottom))}
+    .card{background:#15151c;border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .muted{color:var(--muted)}
+    input,select{height:var(--tap);padding:0 12px;border-radius:12px;border:1px solid var(--line);background:#0f1117;color:#eef1f6;font-size:16px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;height:var(--tap);padding:0 14px;border-radius:12px;border:1px solid #2a3343;background:#1f2937;color:#fff;cursor:pointer;font-weight:600}
+    .btn:hover{background:#253043}
+    .btn[disabled]{opacity:.6;cursor:not-allowed}
+    .grid{display:grid;grid-template-columns:1fr;gap:10px}
+    @media(min-width:760px){ .grid{grid-template-columns:1fr 1fr} }
+    code,pre{background:#0f1117;border:1px solid #232536;border-radius:10px;padding:8px 10px;color:#d5e0ff}
+    .ok{color:#d6ffe6;background:#0f2a1f;border:1px solid #1c3b2f;border-radius:10px;padding:8px 10px}
+    .err{color:#ffd1d1;background:#3a1013;border:1px solid #5b1b1f;border-radius:10px;padding:8px 10px}
+    .list{display:flex;flex-wrap:wrap;gap:8px}
+    .pill{padding:2px 8px;border-radius:999px;background:#0e2533;border:1px solid #123;color:#9fe7ff;font-size:12px}
+    nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;gap:10px;justify-content:space-around;padding:8px 12px calc(env(safe-area-inset-bottom)+8px);background:rgba(11,11,16,.9);border-top:1px solid var(--line)}
+    nav.bottom a{flex:1;text-align:center}
+  </style>
+</head>
+<body>
+<header>
+  <a class="btn" href="/">←</a>
+  <div class="logo">Админка</div>
+  <div class="grow"></div>
+  <a class="btn" href="/profile.html">Профиль</a>
+</header>
+
+<main>
+  <div id="gate" class="card">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <div><strong>Доступ</strong></div>
+        <div class="muted" id="meLine">Проверяем…</div>
+      </div>
+      <div id="adminBadge" class="pill" style="display:none">admin</div>
+    </div>
+    <div id="noAccess" class="err" style="display:none;margin-top:10px">
+      Нет доступа. Нужна роль <code>admin</code>. Ниже подсказка, как выдать себе.
+    </div>
+    <div id="seedBox" class="card" style="display:none;margin-top:10px">
+      <div style="font-weight:700;margin-bottom:6px">Первичный доступ (в PostgreSQL)</div>
+      <div class="muted" style="margin-bottom:6px">Выполни на сервере под <code>postgres</code> (подставь свой user_id):</div>
+      <pre id="seedSql"></pre>
+      <div class="muted" style="margin-top:6px">Потом обнови страницу и войди снова.</div>
+    </div>
+  </div>
+
+  <div id="sys" class="card" style="display:none">
+    <strong>Система</strong>
+    <div class="row" style="margin-top:8px">
+      <button class="btn" id="btnHealth">Проверить /health</button>
+      <div id="healthOut" class="muted">—</div>
+    </div>
+  </div>
+
+  <div id="roles" class="card" style="display:none">
+    <strong>Роли пользователей</strong>
+    <div class="grid" style="margin-top:10px">
+      <div>
+        <div class="muted" style="margin:6px 0 4px">User ID</div>
+        <input id="uid" inputmode="numeric" placeholder="например, 1">
+      </div>
+      <div>
+        <div class="muted" style="margin:6px 0 4px">Роль</div>
+        <select id="role"><option value="admin">admin</option></select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="btnCheck">Проверить роли</button>
+      <button class="btn" id="btnGrant">Выдать роль</button>
+      <button class="btn" id="btnRevoke">Снять роль</button>
+      <div id="rolesStatus" class="muted">—</div>
+    </div>
+    <div id="rolesList" class="list" style="margin-top:8px"></div>
+  </div>
+
+  <div id="help" class="card" style="display:none">
+    <strong>Примечание</strong>
+    <div class="muted" style="margin-top:6px">
+      Сейчас админка умеет управлять ролями. Модерация заявок/видео/тикетов — добавим, как только на бэке будут эндпоинты
+      для глобального листинга/бана/удаления. 
+    </div>
+  </div>
+</main>
+
+<nav class="bottom">
+  <a href="/" class="btn">Лента</a>
+  <a href="/requests.html" class="btn btn-ghost">Заявки</a>
+  <a href="/chat.html" class="btn btn-ghost">Чат</a>
+  <a href="/profile.html" class="btn btn-ghost">Профиль</a>
+</nav>
+
+<script>
+const $=s=>document.querySelector(s);
+const apiBase='';
+let token=localStorage.getItem('token')||'';
+if(!token){ location.replace('/login.html?next=/admin.html') }
+
+function hdr(){ return {'Authorization':'Bearer '+token,'Content-Type':'application/json'} }
+async function j(path,opts){ opts=opts||{}; const r=await fetch(apiBase+path,{method:opts.method||'GET',headers:Object.assign({},hdr(),opts.headers||{}),body:opts.body?JSON.stringify(opts.body):undefined}); const ct=r.headers.get('content-type')||''; const d=ct.includes('json')?await r.json().catch(()=> ({})):await r.text().catch(()=> ''); if(!r.ok) throw new Error((d&&d.error)||('HTTP '+r.status)); return d }
+
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function rolesFromResp(d){
+  if(!d) return [];
+  if (Array.isArray(d)) {
+    // [{role:"admin"}, ...] или ["admin",...]
+    return d.map(x => typeof x==='string' ? x : (x.role||x.name||'')).filter(Boolean);
+  }
+  if (Array.isArray(d.items)) return rolesFromResp(d.items);
+  if (Array.isArray(d.roles)) return rolesFromResp(d.roles);
+  return [];
+}
+
+async function checkMe(){
+  const me = await j('/api/me').catch(()=>null);
+  if(!me){ $('#meLine').textContent='Нужно войти'; return {me:null, isAdmin:false} }
+  $('#meLine').textContent = (me.email||('id '+me.id)) + ' • uid '+me.id;
+  // проверяем свои роли через админ-роут
+  try{
+    const rr = await j('/api/admin/roles?user_id='+encodeURIComponent(me.id));
+    const myRoles = rolesFromResp(rr);
+    const isAdmin = myRoles.includes('admin');
+    if (isAdmin){ $('#adminBadge').style.display='inline-flex' }
+    return {me, isAdmin};
+  }catch(e){
+    // если 403 — точно не админ
+    return {me, isAdmin:false};
+  }
+}
+
+function showAdminUI(flag){
+  const ids = ['sys','roles','help'];
+  ids.forEach(id => { $( '#'+id ).style.display = flag ? 'block' : 'none' });
+  $('#noAccess').style.display = flag ? 'none' : 'block';
+}
+
+function seedSqlFor(me){
+  const sql =
+`-- создать таблицу ролей (если ещё нет)
+CREATE TABLE IF NOT EXISTS user_roles (
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL,
+  PRIMARY KEY (user_id, role)
+);
+
+-- выдать себе роль admin
+INSERT INTO user_roles(user_id, role) VALUES (${me.id}, 'admin')
+ON CONFLICT DO NOTHING;`;
+  $('#seedSql').textContent = sql;
+  $('#seedBox').style.display = 'block';
+}
+
+async function load(){
+  const {me, isAdmin} = await checkMe();
+  if (!me){ return }
+  if (!isAdmin){ showAdminUI(false); seedSqlFor(me); return }
+  showAdminUI(true);
+}
+
+async function health(){
+  $('#healthOut').textContent = '…';
+  try{
+    const r = await fetch('/health');
+    const t = await r.text();
+    $('#healthOut').textContent = 'OK: '+t;
+  }catch(e){
+    $('#healthOut').textContent = 'Ошибка: '+e.message;
+  }
+}
+
+async function showRolesFor(uid){
+  $('#rolesStatus').textContent = '…';
+  $('#rolesList').innerHTML = '';
+  try{
+    const d = await j('/api/admin/roles?user_id='+encodeURIComponent(uid));
+    const roles = rolesFromResp(d);
+    $('#rolesStatus').textContent = roles.length ? 'Найдено '+roles.length : 'Ролей нет';
+    roles.forEach(r=>{
+      const span = document.createElement('span'); span.className='pill'; span.textContent=r;
+      $('#rolesList').appendChild(span);
+    });
+  }catch(e){
+    $('#rolesStatus').textContent = 'Ошибка: '+e.message;
+  }
+}
+
+async function grant(uid, role){
+  $('#rolesStatus').textContent='Выдаём…';
+  try{
+    await j('/api/admin/roles/grant',{method:'POST',body:{user_id:Number(uid), role}});
+    $('#rolesStatus').textContent='Выдано';
+    await showRolesFor(uid);
+  }catch(e){ $('#rolesStatus').textContent='Ошибка: '+e.message }
+}
+async function revoke(uid, role){
+  $('#rolesStatus').textContent='Снимаем…';
+  try{
+    await j('/api/admin/roles/revoke',{method:'POST',body:{user_id:Number(uid), role}});
+    $('#rolesStatus').textContent='Снято';
+    await showRolesFor(uid);
+  }catch(e){ $('#rolesStatus').textContent='Ошибка: '+e.message }
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  load();
+  $('#btnHealth').onclick = health;
+
+  $('#btnCheck').onclick = ()=>{ const uid=$('#uid').value.trim(); if(!uid) return; showRolesFor(uid) };
+  $('#btnGrant').onclick = ()=>{ const uid=$('#uid').value.trim(); if(!uid) return; const role=$('#role').value; grant(uid, role) };
+  $('#btnRevoke').onclick = ()=>{ const uid=$('#uid').value.trim(); if(!uid) return; const role=$('#role').value; revoke(uid, role) };
+});
+</script>
+</body>
+</html>
+
