@@ -1,0 +1,20 @@
+# Go build artifacts
+zodak-api
+*.exe
+*.out
+
+# IDE / editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Node / frontend build (если будет)
+node_modules/
+dist/
+
