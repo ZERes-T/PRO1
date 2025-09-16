@@ -1,0 +1,14 @@
+[Unit]
+Description=Zodak API
+After=network.target
+
+[Service]
+Type=simple
+User=zodak
+WorkingDirectory=/home/zodak/PRO1/apps/zodak
+EnvironmentFile=/home/zodak/PRO1/apps/zodak/.env
+ExecStart=/home/zodak/PRO1/apps/zodak/zodak_api
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
