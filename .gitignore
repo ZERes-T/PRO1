@@ -11,3 +11,10 @@ tmp/
 storage/
 public/media/
 public/uploads/
+
+# --- allow project zodak, keep secrets/logs ignored ---
+!zodak/
+!zodak/**
+zodak/.env
+zodak/.env.*
+zodak/*.log
