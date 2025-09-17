@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Вход — mebelplace</title>
+<link rel="stylesheet" href="/common.css">
+<style>
+  :root { --accent:#f59e0b; --bg:#0b0b0f; --muted:#cbd5e1 }
+  html,body{height:100%;background:#000;color:#fff}
+  body{display:grid;place-items:center;min-height:100dvh;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif}
+  .drops{position:fixed;inset:-10vh;background:radial-gradient(1200px 1200px at 50% 100%,#0a0a0a 0%, #000 60%)}
+  .drops i{position:absolute;display:block;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.18),rgba(255,255,255,.04) 35%,rgba(255,255,255,0) 70%);
+    filter:blur(1px);opacity:.45;transform:translate(var(--tx),var(--ty)) scale(.7);
+    animation:puff var(--dur) ease-in-out var(--delay) infinite;will-change:transform,opacity}
+  @keyframes puff{0%{transform:translate(var(--tx),var(--ty)) scale(.7);opacity:.35}
+    50%{transform:translate(calc(var(--tx) + var(--dx)),calc(var(--ty) + var(--dy))) scale(1.2);opacity:.7}
+    100%{transform:translate(var(--tx),var(--ty)) scale(.7);opacity:.35}}
+  .wrap{position:relative;z-index:2;width:min(440px,92vw)}
+  .glass{backdrop-filter:blur(10px);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
+    border-radius:20px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .brand b{font-size:20px;letter-spacing:.3px}
+  .tabs{display:flex;gap:8px;margin:8px 0 14px}
+  .tab{flex:1;height:46px;border-radius:12px;border:none;background:#16181f;color:#fff;font-weight:900;cursor:pointer}
+  .tab.active{background:#fff;color:#000}
+  label{display:block;font-size:13px;color:#eaeef7;margin:8px 2px 6px;font-weight:800;letter-spacing:.2px}
+  .field{position:relative}
+  .field .icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.75}
+  .input{width:100%;height:48px;border-radius:12px;padding:0 14px 0 42px;color:#fff;background:#0e0f12;border:1px solid rgba(255,255,255,.18)}
+  .input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,158,11,.25)}
+  .hint{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .muted{color:#aeb6c3}.link{color:#fff}
+  .btn{height:46px;border-radius:12px;padding:0 14px;font-weight:900;border:none;cursor:pointer}
+  .btn:disabled{opacity:.6}
+  .btn-primary{background:var(--accent);color:#111;box-shadow:0 8px 18px rgba(245,158,11,.35)}
+  .btn-primary:focus{outline:none;box-shadow:0 0 0 3px rgba(245,158,11,.35)}
+  .btn.ghost{background:#fff;color:#000}
+  .err,.ok{display:none;border-radius:12px;padding:10px;margin-top:8px;font-size:14px}
+  .err{background:#2b0f12;color:#ffb4b4;border:1px solid #7a2830}
+  .ok{background:#0f2b18;color:#bfffd4;border:1px solid #2e7a52}
+  .foot{display:flex;gap:10px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="drops" aria-hidden="true" id="drops"></div>
+
+<div class="wrap">
+  <div class="glass">
+    <div class="brand">
+      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%23f59e0b'%3E<path d='M12 2l3 5 6 .9-4.3 4.2 1 5.9L12 15l-5.7 3 1-5.9L3 7.9 9 7z'/></svg>" alt="">
+      <b>mebelplace</b>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Выбор формы">
+      <button class="tab active" id="tLogin" role="tab" aria-selected="true" aria-controls="fLogin">Войти</button>
+      <button class="tab" id="tReg" role="tab" aria-selected="false" aria-controls="fReg">Регистрация</button>
+    </div>
+
+    <!-- Вход -->
+    <form id="fLogin" autocomplete="on" role="tabpanel" aria-labelledby="tLogin">
+      <label for="lEmail">Эл. почта</label>
+      <div class="field">
+        <span class="icon">✉️</span>
+        <input class="input" style="padding:0 14px 0 42px" id="lEmail" name="email" type="email" inputmode="email" placeholder="Почта" required>
+      </div>
+
+      <div class="hint">
+        <label for="lPass" style="margin:0">Пароль</label>
+        <button type="button" id="showL" class="btn ghost" style="height:36px">Показать</button>
+      </div>
+      <div class="field">
+        <span class="icon">🔒</span>
+        <input class="input" id="lPass" name="password" type="password" placeholder="••••••••" required>
+      </div>
+
+      <div id="lErr" class="err" role="alert"></div>
+      <div id="lOk"  class="ok"></div>
+      <div class="foot">
+        <button class="btn btn-primary" id="btnLogin" type="submit" style="flex:1">Войти</button>
+      </div>
+    </form>
+
+    <!-- Регистрация -->
+    <form id="fReg" style="display:none" role="tabpanel" aria-labelledby="tReg">
+      <label for="rName">Имя</label>
+      <div class="field">
+        <span class="icon">👤</span>
+        <input class="input" id="rName" name="name" placeholder="Иван" required>
+      </div>
+
+      <label for="rEmail">Эл. почта</label>
+      <div class="field">
+        <span class="icon">✉️</span>
+        <input class="input" style="padding:0 14px 0 42px" id="rEmail" name="email" type="email" inputmode="email" placeholder="Почта" required>
+      </div>
+
+      <div class="hint">
+        <label for="rPass" style="margin:0">Пароль</label>
+        <button type="button" id="showR" class="btn ghost" style="height:36px">Показать</button>
+      </div>
+      <div class="field">
+        <span class="icon">🔒</span>
+        <input class="input" id="rPass" name="password" type="password" placeholder="Минимум 6 символов" minlength="6" required autocomplete="new-password">
+      </div>
+
+      <div id="rErr" class="err" role="alert"></div>
+      <div id="rOk"  class="ok"></div>
+      <button class="btn btn-primary" id="btnReg" type="submit" style="width:100%">Создать аккаунт</button>
+    </form>
+
+    <div class="muted" style="margin-top:10px">
+      Нажимая «Войти»/«Создать», вы соглашаетесь с <a href="/legal/terms" class="link">условиями сервиса</a>.
+    </div>
+  </div>
+</div>
+
+<script>
+(()=> {
+  // фон «капли»
+  const drops = document.getElementById('drops');
+  for (let i=0;i<14;i++){
+    const e=document.createElement('i');
+    const tx=Math.random()*100, ty=Math.random()*100;
+    e.style.setProperty('--tx', tx+'vw'); e.style.setProperty('--ty', ty+'vh');
+    e.style.setProperty('--dx', (Math.random()*16-8)+'vmin');
+    e.style.setProperty('--dy', (Math.random()*10-5)+'vmin');
+    e.style.setProperty('--dur', (10+Math.random()*10)+'s');
+    e.style.setProperty('--delay', (Math.random()*-8)+'s');
+    const s=(12+Math.random()*18)+'vmin'; e.style.width=s; e.style.height=s;
+    drops.appendChild(e);
+  }
+
+  // utils
+  const ORIGIN = location.origin.replace(/\.$/, '');       // отрезаем хвостовую точку у домена
+  const api    = (p) => ORIGIN + p;                        // собираем абсолютный URL
+  const $ = s => document.querySelector(s);
+  const nextUrl = new URLSearchParams(location.search).get('next') || '/';
+  const setLoading = (btn,on,txt='')=>{ btn.disabled=on; if(on){ btn.dataset.t=btn.textContent; btn.textContent=txt||'Загрузка…' } else { btn.textContent=btn.dataset.t||btn.textContent } };
+  const show = (el,msg)=>{ el.textContent=msg; el.style.display='block' };
+  const hide = (el)=>{ el.style.display='none' };
+  const saveToken = t => { try{ localStorage.setItem('token',t) }catch{} };
+
+  // табы
+  const tLogin=$('#tLogin'), tReg=$('#tReg'), fLogin=$('#fLogin'), fReg=$('#fReg');
+  function swap(mode){ const login=(mode==='login');
+    fLogin.style.display = login?'block':'none';
+    fReg.style.display   = login?'none':'block';
+    tLogin.classList.toggle('active',login);
+    tReg.classList.toggle('active',!login);
+    tLogin.setAttribute('aria-selected', login?'true':'false');
+    tReg.setAttribute('aria-selected', !login?'true':'false');
+  }
+  tLogin.onclick=()=>swap('login'); tReg.onclick=()=>swap('reg');
+
+  // вход
+  $('#showL').onclick = ()=>{ const p=$('#lPass'); p.type = p.type==='password'?'text':'password' };
+  fLogin.addEventListener('submit', async (e)=>{
+    e.preventDefault(); hide($('#lErr')); hide($('#lOk')); setLoading($('#btnLogin'),true,'Входим…');
+    try{
+      const r = await fetch(api('/api/auth/login'), {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email: $('#lEmail').value.trim(), password: $('#lPass').value })
+      });
+      const js = await r.json().catch(()=>({}));
+      if(!r.ok || !js.token) throw new Error(js.error || (r.status===403?'Доступ запрещён':'Неверные почта или пароль'));
+      saveToken(js.token); show($('#lOk'),'Готово!'); location.replace(nextUrl);
+    }catch(err){ show($('#lErr'), err.message||'Ошибка входа') }
+    finally{ setLoading($('#btnLogin'),false) }
+  });
+
+  // регистрация
+  $('#showR').onclick = ()=>{ const p=$('#rPass'); p.type = p.type==='password'?'text':'password' };
+  fReg.addEventListener('submit', async (e)=>{
+    e.preventDefault(); hide($('#rErr')); hide($('#rOk')); setLoading($('#btnReg'),true,'Создаём…');
+    const name=$('#rName').value.trim(), email=$('#rEmail').value.trim(), pass=$('#rPass').value;
+    try{
+      const rr = await fetch(api('/api/auth/register'), {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ name, email, password: pass })
+      });
+      const j = await rr.json().catch(()=>({}));
+      if(!rr.ok || j.error) throw new Error(j.error || (rr.status===403?'Доступ запрещён':'Регистрация не удалась'));
+
+      // автологин
+      const rl = await fetch(api('/api/auth/login'), {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email, password: pass })
+      });
+      const jl = await rl.json().catch(()=>({}));
+      if(!rl.ok || !jl.token) throw new Error(jl.error || 'Не вошли после регистрации');
+
+      saveToken(jl.token); show($('#rOk'),'Аккаунт создан ✔'); location.replace(nextUrl);
+    }catch(err){ show($('#rErr'), err.message||'Ошибка регистрации') }
+    finally{ setLoading($('#btnReg'),false) }
+  });
+
+  if (new URLSearchParams(location.search).get('mode')==='reg') swap('reg');
+})();
+</script>
+</body>
+</html>

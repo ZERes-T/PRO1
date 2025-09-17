@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль — mebelplace</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --bg-primary: #0b0b0f;
+            --bg-secondary: #11131a;
+            --bg-tertiary: #1a1e2c;
+            --border-color: #232b3a;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9aa3b2;
+            --accent: #f59e0b;
+            --accent-hover: #ffb341;
+            --radius: 12px;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            position: relative;
+            padding-bottom: 70px;
+        }
+
+        /* Header styles */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--accent);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .settings-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        /* Profile section */
+        .profile-section {
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 16px;
+            border: 3px solid var(--accent);
+        }
+
+        .profile-name {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .profile-username {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .profile-bio {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 15px;
+            line-height: 1.5;
+            max-width: 80%;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .action-btn {
+            padding: 10px 20px;
+            border-radius: var(--radius);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .primary-btn {
+            background-color: var(--accent);
+            color: #000;
+        }
+
+        .secondary-btn {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 16px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 0;
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        /* Content sections */
+        .content-section {
+            padding: 0 16px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--accent);
+        }
+
+        /* Videos grid */
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .video-item {
+            position: relative;
+            aspect-ratio: 9/16;
+            background-color: var(--bg-tertiary);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .video-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-stats {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            right: 8px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 4px 8px;
+            border-radius: var(--radius);
+        }
+
+        /* Favorites grid */
+        .favorites-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .favorite-item {
+            background-color: var(--bg-tertiary);
+            border-radius: var(--radius);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .favorite-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .favorite-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .favorite-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .favorite-content {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Orders list */
+        .orders-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .order-item {
+            background-color: var(--bg-tertiary);
+            border-radius: var(--radius);
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-info {
+            flex: 1;
+        }
+
+        .order-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 16px;
+        }
+
+        .order-date {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .order-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-completed {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .status-pending {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: var(--accent);
+        }
+
+        /* Upload section */
+        .upload-section {
+            background-color: var(--bg-tertiary);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+
+        .upload-text {
+            margin-bottom: 16px;
+            font-size: 15px;
+        }
+
+        .upload-btn {
+            padding: 10px 20px;
+            background-color: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Bottom navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--bg-primary);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid var(--border-color);
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 12px;
+            transition: color 0.2s;
+            flex: 1;
+        }
+
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item.active {
+            color: var(--accent);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .videos-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .profile-stats {
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .profile-avatar {
+                width: 80px;
+                height: 80px;
+                font-size: 2rem;
+            }
+            
+            .profile-name {
+                font-size: 20px;
+            }
+            
+            .profile-username {
+                font-size: 14px;
+            }
+            
+            .stat-value {
+                font-size: 16px;
+            }
+            
+            .stat-label {
+                font-size: 12px;
+            }
+            
+            .action-btn {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+            
+            .videos-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .favorites-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-item i {
+                font-size: 18px;
+            }
+            
+            .nav-item span {
+                font-size: 11px;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                max-width: 414px;
+                margin: 0 auto;
+                border-left: 1px solid var(--border-color);
+                border-right: 1px solid var(--border-color);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Верхняя панель -->
+        <header class="header">
+            <button class="back-btn" onclick="history.back()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h1 class="title">Профиль</h1>
+            <button class="settings-btn">
+                <i class="fas fa-cog"></i>
+            </button>
+        </header>
+
+        <!-- Секция профиля -->
+        <section class="profile-section">
+            <div class="profile-avatar">M</div>
+            <h2 class="profile-name">Мастер Мебельщик</h2>
+            <p class="profile-username">@master_mebel</p>
+            
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <span class="stat-value">247</span>
+                    <span class="stat-label">Подписчики</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">1.2K</span>
+                    <span class="stat-label">Лайки</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">56</span>
+                    <span class="stat-label">Заказы</span>
+                </div>
+            </div>
+            
+            <p class="profile-bio">
+                Профессиональный мастер по изготовлению мебели. 10 лет опыта. Создаю уникальную мебель на заказ.
+            </p>
+            
+            <div class="profile-actions">
+                <button class="action-btn primary-btn">
+                    <i class="fas fa-edit"></i> Редактировать
+                </button>
+                <button class="action-btn secondary-btn">
+                    <i class="fas fa-share-alt"></i> Поделиться
+                </button>
+            </div>
+        </section>
+
+        <!-- Табы -->
+        <div class="tabs">
+            <div class="tab active" data-tab="videos">Видео</div>
+            <div class="tab" data-tab="favorites">Избранное</div>
+            <div class="tab" data-tab="orders">Заказы</div>
+        </div>
+
+        <!-- Контент: Видео -->
+        <section class="content-section" id="videosContent">
+            <h3 class="section-title">Мои видео</h3>
+            
+            <!-- Для мастеров: загрузка видео -->
+            <div class="upload-section">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <p class="upload-text">Загрузите свое первое видео и покажите свои работы</p>
+                <button class="upload-btn">Загрузить видео</button>
+            </div>
+            
+            <div class="videos-grid">
+                <div class="video-item">
+                    <img src="https://via.placeholder.com/150/333" alt="Video">
+                    <div class="video-stats">
+                        <span><i class="fas fa-heart"></i> 124</span>
+                        <span><i class="fas fa-comment"></i> 15</span>
+                    </div>
+                </div>
+                <div class="video-item">
+                    <img src="https://via.placeholder.com/150/222" alt="Video">
+                    <div class="video-stats">
+                        <span><i class="fas fa-heart"></i> 89</span>
+                        <span><i class="fas fa-comment"></i> 7</span>
+                    </div>
+                </div>
+                <div class="video-item">
+                    <img src="https://via.placeholder.com/150/444" alt="Video">
+                    <div class="video-stats">
+                        <span><i class="fas fa-heart"></i> 217</span>
+                        <span><i class="fas fa-comment"></i> 24</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Контент: Избранное -->
+        <section class="content-section" id="favoritesContent" style="display: none;">
+            <h3 class="section-title">Избранное</h3>
+            
+            <div class="favorites-grid">
+                <div class="favorite-item">
+                    <div class="favorite-header">
+                        <div class="favorite-avatar">U</div>
+                        <div class="favorite-name">@user123</div>
+                    </div>
+                    <p class="favorite-content">Отличный мастер! Сделал кухню моей мечты. Качество на высшем уровне.</p>
+                </div>
+                <div class="favorite-item">
+                    <div class="favorite-header">
+                        <div class="favorite-avatar">C</div>
+                        <div class="favorite-name">@client456</div>
+                    </div>
+                    <p class="favorite-content">Очень доволен работой. Мебель получилась именно такой, как я хотел.</p>
+                </div>
+                <div class="favorite-item">
+                    <div class="favorite-header">
+                        <div class="favorite-avatar">H</div>
+                        <div class="favorite-name">@home_owner</div>
+                    </div>
+                    <p class="favorite-content">Рекомендую этого мастера! Профессионал своего дела.</p>
+                </div>
+                <div class="favorite-item">
+                    <div class="favorite-header">
+                        <div class="favorite-avatar">D</div>
+                        <div class="favorite-name">@design_lover</div>
+                    </div>
+                    <p class="favorite-content">Креативный подход и внимание к деталям. Буду заказывать еще!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Контент: Заказы -->
+        <section class="content-section" id="ordersContent" style="display: none;">
+            <h3 class="section-title">Выполненные заказы</h3>
+            
+            <div class="orders-list">
+                <div class="order-item">
+                    <div class="order-info">
+                        <div class="order-title">Кухонный гарнитур</div>
+                        <div class="order-date">Завершен: 12.05.2023</div>
+                    </div>
+                    <div class="order-status status-completed">Выполнен</div>
+                </div>
+                <div class="order-item">
+                    <div class="order-info">
+                        <div class="order-title">Шкаф-купе</div>
+                        <div class="order-date">Завершен: 28.04.2023</div>
+                    </div>
+                    <div class="order-status status-completed">Выполнен</div>
+                </div>
+                <div class="order-item">
+                    <div class="order-info">
+                        <div class="order-title">Прихожая</div>
+                        <div class="order-date">Завершен: 15.04.2023</div>
+                    </div>
+                    <div class="order-status status-completed">Выполнен</div>
+                </div>
+                <div class="order-item">
+                    <div class="order-info">
+                        <div class="order-title">Детская кровать</div>
+                        <div class="order-date">В процессе</div>
+                    </div>
+                    <div class="order-status status-pending">В работе</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Нижняя панель навигации -->
+        <nav class="bottom-nav">
+            <a href="line.html" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Главная</span>
+            </a>
+            <a href="subsription.html" class="nav-item">
+                <i class="fas fa-user-friends"></i>
+                <span>Подписки</span>
+            </a>
+            <a href="request1.html" class="nav-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Заявки</span>
+            </a>
+            <a href="messenger1.html" class="nav-item">
+                <i class="fas fa-comment"></i>
+                <span>Мессенджер</span>
+            </a>
+            <a href="profile.html" class="nav-item active">
+                <i class="fas fa-user"></i>
+                <span>Профиль</span>
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        // Переключение между табами
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Убираем активный класс у всех табов
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                // Добавляем активный класс текущему табу
+                tab.classList.add('active');
+                
+                // Скрываем все секции контента
+                document.getElementById('videosContent').style.display = 'none';
+                document.getElementById('favoritesContent').style.display = 'none';
+                document.getElementById('ordersContent').style.display = 'none';
+                
+                // Показываем соответствующую секцию
+                const tabName = tab.getAttribute('data-tab');
+                document.getElementById(tabName + 'Content').style.display = 'block';
+            });
+        });
+
+        // Обработка кнопки загрузки видео
+        document.querySelector('.upload-btn').addEventListener('click', function() {
+            alert('Функция загрузки видео будет реализована в будущем обновлении');
+        });
+
+        // Обработка кнопки редактирования профиля
+        document.querySelector('.primary-btn').addEventListener('click', function() {
+            alert('Редактирование профиля будет доступно в следующем обновлении');
+        });
+
+        // Обработка кнопки настроек
+        document.querySelector('.settings-btn').addEventListener('click', function() {
+            alert('Настройки профиля');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Мессенджер — mebelplace</title>
+<link rel="stylesheet" href="/common.css">
+<style>
+  :root{
+    --bg:#0b0b0f; --panel:#11131a; --line:#232b3a; --muted:#9aa3b2;
+    --text:#e5e7eb; --accent:#f59e0b; --ok:#10b981; --danger:#ef4444;
+    --radius:16px; --hdr:56px; --tabbar-h:64px; --maxw:1200px;
+    --shadow:0 10px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,Inter,Segoe UI,Roboto,Ubuntu}
+  a{color:inherit;text-decoration:none}
+
+  /* Header */
+  header{
+    position:sticky; top:0; z-index:30; height:var(--hdr);
+    display:flex; align-items:center; gap:10px; padding:0 16px;
+    background:#0d0f15cc; border-bottom:1px solid var(--line); backdrop-filter:blur(8px)
+  }
+  .title{font-weight:900; font-size:22px; letter-spacing:.2px}
+  .spacer{flex:1}
+
+  /* Layout */
+  .page{max-width:var(--maxw); margin:0 auto; padding:14px 14px calc(14px + var(--tabbar-h) + env(safe-area-inset-bottom));}
+  .grid{display:grid; grid-template-columns:320px 1fr 360px; gap:14px}
+  .panel{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden; min-height:60vh;
+  }
+
+  /* Left: threads */
+  .threads{display:grid; grid-template-rows:auto 1fr}
+  .search{padding:10px; border-bottom:1px solid var(--line)}
+  .search input{
+    width:100%; height:42px; border-radius:12px; border:1px solid var(--line);
+    background:#0b0d13; color:var(--text); padding:0 12px; outline:none;
+  }
+  .list{overflow:auto}
+  .empty{display:grid; place-items:center; padding:32px; color:#92a0b3; text-align:center; font-size:14px}
+  .row{display:grid; grid-template-columns:44px 1fr auto; gap:10px; align-items:center; padding:10px 12px; border-bottom:1px solid #1a2230; cursor:pointer}
+  .row:hover{background:#131828}
+  .row.active{background:#161e30}
+  .ava{width:44px; height:44px; border-radius:50%; overflow:hidden; background:#141823}
+  .ava img{width:100%; height:100%; object-fit:cover}
+  .name{font-weight:800}
+  .meta{font-size:12px; color:#9aa3b2; text-align:right}
+  .dot{width:8px; height:8px; border-radius:50%; background:#3b475f; display:inline-block}
+  .badge{display:inline-grid; place-items:center; min-width:18px; height:18px; padding:0 6px; border-radius:999px; font-size:12px; background:#f59e0b; color:#1b1304; font-weight:900}
+
+  /* Center: chat */
+  .chat{display:grid; grid-template-rows:auto 1fr auto; min-height:60vh}
+  .chat-head{display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line)}
+  .chat-body{padding:14px; overflow:auto; background:linear-gradient(180deg,#0e1119,#0b0f1a)}
+  .hint{color:#9aa3b2; font-size:14px; text-align:center; padding:24px}
+  .msg{max-width:76%; margin:8px 0; padding:10px 12px; border-radius:12px; border:1px solid #26324a}
+  .them{background:#111a2b}
+  .me{margin-left:auto; background:#1a2236; border-color:#2b3a5f}
+  .time{display:block; margin-top:6px; font-size:11px; color:#9aa3b2; opacity:.85}
+  .chat-foot{display:flex; gap:8px; padding:10px; border-top:1px solid var(--line); background:#0d0f15cc}
+  .input{flex:1; height:44px; border-radius:12px; border:1px solid var(--line); background:#0b0d13; color:var(--text); padding:0 12px}
+  .btn{height:44px; padding:0 14px; border-radius:12px; border:0; background:#f59e0b; color:#1b1304; font-weight:900; cursor:pointer}
+  .btn:disabled{opacity:.6; cursor:not-allowed}
+
+  /* Right: requests */
+  .req{display:grid; grid-template-rows:auto 1fr}
+  .req-head{display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--line)}
+  .seg{display:flex; gap:6px}
+  .chip{padding:6px 10px; border-radius:999px; border:1px solid #384158; background:#121827; cursor:pointer; font-size:13px}
+  .chip.active{background:#f59e0b; border-color:#f59e0b; color:#1b1304; font-weight:900}
+  .req-body{overflow:auto; padding:10px 10px 2px}
+  .ticket{border:1px solid #2a344e; border-radius:12px; padding:10px; margin:0 0 10px; background:#121827}
+  .ticket .row2{display:flex; justify-content:space-between; gap:8px}
+  .st{font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid #33405f}
+  .st.open{background:#182a22; border-color:#1f4d39; color:#a7f3d0}
+  .st.wait{background:#2b2430; border-color:#4b3557; color:#e1c9ff}
+  .st.closed{background:#2a1313; border-color:#803131; color:#fecaca}
+
+  /* Bottom nav */
+  .tabbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:40;
+    display:grid; grid-template-columns:repeat(5,1fr);
+    height:var(--tabbar-h); background:#0b0b0f; border-top:1px solid var(--line);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .tabbar a{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-size:13px; font-weight:800; color:#9ca3af}
+  .tabbar a.active{color:#ffd28a}
+  .tabbar a svg{color:currentColor}
+
+  /* Mobile */
+  @media (max-width: 1024px){
+    .grid{grid-template-columns:1fr; gap:12px}
+    .req{min-height:40vh}
+    .chat{min-height:50vh}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="title">Мессенджер</div>
+  <div class="spacer"></div>
+</header>
+
+<div class="page">
+  <div class="grid">
+    <!-- LEFT: threads -->
+    <section class="panel threads" aria-label="Диалоги">
+      <div class="search">
+        <input id="q" placeholder="Поиск диалогов" autocomplete="off">
+      </div>
+      <div id="threads" class="list">
+        <div class="empty" id="threadsEmpty">Диалогов пока нет</div>
+      </div>
+    </section>
+
+    <!-- CENTER: chat -->
+    <section class="panel chat" aria-label="Чат">
+      <div class="chat-head">
+        <div id="chatAva" class="ava" aria-hidden="true" style="width:36px;height:36px;border-radius:10px;overflow:hidden;background:#141823"></div>
+        <div>
+          <div id="chatName" class="name">Выберите диалог</div>
+          <div id="chatSub" class="meta">—</div>
+        </div>
+        <div class="spacer"></div>
+      </div>
+      <div id="chatBody" class="chat-body">
+        <div class="hint" id="chatHint">Выберите диалог слева, чтобы начать переписку</div>
+      </div>
+      <div class="chat-foot">
+        <input id="msgInput" class="input" placeholder="Напишите сообщение…" disabled>
+        <button id="sendBtn" class="btn" disabled>Отправить</button>
+      </div>
+    </section>
+
+    <!-- RIGHT: requests -->
+    <aside class="panel req" aria-label="Мои заявки">
+      <div class="req-head">
+        <strong>Мои заявки</strong>
+        <div class="spacer"></div>
+        <div class="seg" id="reqSeg">
+          <button class="chip active" data-filter="all">Все</button>
+          <button class="chip" data-filter="open">Открытые</button>
+          <button class="chip" data-filter="wait">В ожидании</button>
+          <button class="chip" data-filter="closed">Закрытые</button>
+        </div>
+      </div>
+      <div id="reqList" class="req-body">
+        <div class="empty" id="reqEmpty">Заявок пока нет</div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- bottom nav -->
+<nav class="tabbar" id="tabbar">
+  <a href="/" data-path="/">
+    <svg width="22" height="22" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3 2 12h3v9h6v-6h2v6h6v-9h3z"/></svg>
+    <span>Лента</span>
+  </a>
+  <a href="/subs.html" data-path="/subs.html">
+    <svg width="22" height="22" viewBox="0 0 24 24"><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05A6.1 6.1 0 0 1 18 16.5V19h6v-2.5C24 14.57 20.33 13 16 13z"/></svg>
+    <span>Подписки</span>
+  </a>
+  <a href="/requests.html" data-path="/requests.html">
+    <svg width="22" height="22" viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10a2 2 0 0 1 2 2v14l-7-3l-7 3V5a2 2 0 0 1 2-2z"/></svg>
+    <span>Заявка всем</span>
+  </a>
+  <a href="/messenger.html" data-path="/messenger.html">
+    <svg width="22" height="22" viewBox="0 0 24 24"><path fill="currentColor" d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>
+    <span>Мессенджер</span>
+  </a>
+  <a href="/profile.html" data-path="/profile.html">
+    <svg width="22" height="22" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-5 0-9 2.5-9 5.5A1.5 1.5 0 0 0 4.5 21h15A1.5 1.5 0 0 0 21 19.5C21 16.5 17 14 12 14z"/></svg>
+    <span>Профиль</span>
+  </a>
+</nav>
+
+<script>
+/* utils */
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+function token(){ try{return localStorage.getItem('token')||''}catch{return''} }
+function hdr(){ const h={'Content-Type':'application/json'}; const t=token(); if(t) h['Authorization']='Bearer '+t; return h }
+async function j(url,opts){
+  opts=opts||{};
+  const r=await fetch(url,{method:opts.method||'GET',headers:Object.assign({},hdr(),opts.headers||{}),body:opts.body?JSON.stringify(opts.body):undefined,credentials:'include'});
+  const ct=r.headers.get('content-type')||''; const data=ct.includes('json')?await r.json().catch(()=> ({})):await r.text().catch(()=> '');
+  if(!r.ok) throw new Error((data&&data.error)||('HTTP '+r.status));
+  return data;
+}
+function avatar(seed,size=44){
+  const s = encodeURIComponent(seed||'u'); 
+  return `<img src="https://api.dicebear.com/8.x/thumbs/svg?seed=${s}" alt="">`;
+}
+function fmtTime(ts){ try{const d=new Date(ts); return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}catch{return ''} }
+
+/* bottom nav active */
+(function(){
+  const cur = (location.pathname.replace(/\/+$/,'') || '/');
+  $$('#tabbar a').forEach(a=>{
+    const p = a.getAttribute('data-path');
+    const isHome = (p==='/' && (cur==='/' || cur==='/index.html'));
+    if(p===cur || isHome) a.classList.add('active');
+  });
+})();
+
+/* state */
+const state = { threads:[], filtered:[], active:null, messages:{}, req:[], reqFilter:'all' };
+
+/* renderers */
+function renderThreads(){
+  const box = $('#threads'); box.innerHTML='';
+  const list = state.filtered.length ? state.filtered : state.threads;
+  if (!list.length){
+    const div=document.createElement('div'); div.className='empty'; div.textContent='Диалогов пока нет';
+    box.appendChild(div); return;
+  }
+  list.forEach(t=>{
+    const el=document.createElement('div');
+    el.className='row'+(t.id===state.active?' active':''); el.dataset.id=t.id;
+    el.innerHTML = `
+      <div class="ava">${avatar(t.peer)}</div>
+      <div>
+        <div class="name">${t.title||t.peer}</div>
+        <div class="meta" style="text-align:left">${t.lastText? t.lastText.slice(0,70) : '—'}</div>
+      </div>
+      <div class="meta">
+        <div>${fmtTime(t.updatedAt||t.createdAt)}</div>
+        ${t.unread?`<span class="badge">${t.unread}</span>`:'<span class="dot"></span>'}
+      </div>`;
+    el.onclick=()=>openThread(t.id);
+    box.appendChild(el);
+  });
+}
+function renderChat(){
+  const t = state.threads.find(x=>x.id===state.active);
+  $('#chatAva').innerHTML = t ? avatar(t.peer,36) : '';
+  $('#chatName').textContent = t ? (t.title||t.peer) : 'Выберите диалог';
+  $('#chatSub').textContent = t ? 'онлайн' : '—';
+
+  const body = $('#chatBody'); body.innerHTML='';
+  const msgs = state.messages[state.active] || [];
+  if (!t){
+    const hint=document.createElement('div'); hint.className='hint'; hint.textContent='Выберите диалог слева, чтобы начать переписку';
+    body.appendChild(hint);
+  }else if(!msgs.length){
+    const hint=document.createElement('div'); hint.className='hint'; hint.textContent='Пока сообщений нет — начните диалог';
+    body.appendChild(hint);
+  }else{
+    msgs.forEach(m=>{
+      const d=document.createElement('div'); d.className='msg '+(m.mine?'me':'them');
+      d.innerHTML = `<div>${(m.text||'').replace(/</g,'&lt;')}</div><span class="time">${fmtTime(m.ts)}</span>`;
+      body.appendChild(d);
+    });
+    body.scrollTop = body.scrollHeight;
+  }
+  const en = !!t;
+  $('#msgInput').disabled=!en; $('#sendBtn').disabled=!en;
+}
+function renderReq(){
+  const box = $('#reqList'); box.innerHTML='';
+  const list = state.req.filter(r=> state.reqFilter==='all' ? true : r.status===state.reqFilter);
+  if(!list.length){ const d=document.createElement('div'); d.className='empty'; d.textContent='Заявок пока нет'; box.appendChild(d); return; }
+  list.forEach(r=>{
+    const el=document.createElement('div'); el.className='ticket';
+    el.innerHTML = `
+      <div class="row2">
+        <strong>#${r.id} — ${r.title||'Заявка'}</strong>
+        <span class="st ${r.status}">${r.status==='open'?'Открыта':r.status==='wait'?'В ожидании':'Закрыта'}</span>
+      </div>
+      <div style="margin-top:6px;color:#9aa3b2">${r.preview||'—'}</div>
+      <div class="row2" style="margin-top:8px;font-size:12px;color:#9aa3b2">
+        <span>${new Date(r.createdAt||Date.now()).toLocaleString()}</span>
+        <a href="/requests.html?id=${r.id}" style="color:#ffd28a">Открыть →</a>
+      </div>`;
+    box.appendChild(el);
+  });
+}
+
+/* API loads (без демо — только реальные данные) */
+async function loadThreads(){
+  try{
+    const data = await j('/api/dm/threads');
+    state.threads = (data.items||data||[]).map(x=>({
+      id:x.id, peer:x.peer||x.username||'user',
+      title:x.title||null, lastText:x.lastText||'',
+      createdAt:x.createdAt||Date.now(), updatedAt:x.updatedAt||Date.now(),
+      unread:x.unread||0
+    }));
+  }catch(e){ state.threads = []; }
+  renderThreads();
+}
+async function loadMessages(id){
+  try{
+    const data = await j(`/api/dm/${encodeURIComponent(id)}/messages`);
+    state.messages[id] = (data.items||data||[]).map(m=>({id:m.id, text:m.text||'', ts:m.createdAt||Date.now(), mine:!!m.mine}));
+  }catch(e){ state.messages[id] = []; }
+  renderChat();
+}
+async function loadReq(){
+  try{
+    const data = await j('/api/requests/my');
+    state.req = (data.items||data||[]).map(x=>({id:x.id, title:x.title||'Заявка', preview:x.preview||x.text||'', status:x.status||'open', createdAt:x.createdAt}));
+  }catch(e){ state.req = []; }
+  renderReq();
+}
+
+/* actions */
+async function openThread(id){
+  state.active = id;
+  // сброс непрочитанных локально
+  const th = state.threads.find(t=>t.id===id); if(th) th.unread = 0;
+  renderThreads();
+  await loadMessages(id);
+}
+async function sendMessage(){
+  const inp=$('#msgInput'); const text=inp.value.trim(); if(!text || !state.active) return;
+  const tid=state.active;
+  inp.value=''; $('#sendBtn').disabled=true;
+  // оптимистично
+  const tmp={id:'tmp_'+Math.random().toString(36).slice(2), text, ts:Date.now(), mine:true};
+  state.messages[tid]=(state.messages[tid]||[]).concat([tmp]); renderChat();
+  try{
+    await j('/api/dm/send',{method:'POST',body:{threadId:tid,text}});
+    await loadMessages(tid);
+  }catch(e){
+    tmp.text += ' (не отправлено)'; renderChat();
+  }finally{$('#sendBtn').disabled=false; $('#msgInput').focus()}
+}
+
+/* init */
+document.addEventListener('DOMContentLoaded', async ()=>{
+  if(!token()){ location.replace('/login.html?next=/messenger.html'); return }
+  await Promise.all([loadThreads(), loadReq()]);
+
+  $('#q').addEventListener('input', e=>{
+    const q=e.target.value.trim().toLowerCase();
+    state.filtered = q ? state.threads.filter(t=>(t.title||'').toLowerCase().includes(q) || (t.peer||'').toLowerCase().includes(q) || (t.lastText||'').toLowerCase().includes(q)) : [];
+    renderThreads();
+  });
+
+  $('#sendBtn').onclick = sendMessage;
+  $('#msgInput').addEventListener('keydown', e=>{
+    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+  });
+
+  // req filter
+  $$('#reqSeg .chip').forEach(ch=>{
+    ch.onclick=()=>{
+      $$('#reqSeg .chip').forEach(x=>x.classList.remove('active'));
+      ch.classList.add('active'); state.reqFilter = ch.dataset.filter; renderReq();
+    };
+  });
+});
+</script>
+</body>
+</html>

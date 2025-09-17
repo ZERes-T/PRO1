@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Профиль — mebelplace</title>
+<link rel="stylesheet" href="/common.css">
+<style>
+  :root{
+    --bg:#0b0b0f; --card:#11131a; --muted:#9aa3b2; --line:#1f2430;
+    --accent:#f59e0b; --danger:#ef4444;
+    --radius:16px; --tap:50px;
+    --maxw:720px; --hdr:56px;
+    --tabbar-h:64px; /* высота нижней панели навигации */
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:#e5e7eb;font:16px/1.5 system-ui,Inter,Roboto,Segoe UI,sans-serif}
+
+  /* Header */
+  header{
+    position:sticky;top:0;z-index:20;height:var(--hdr);
+    display:flex;align-items:center;gap:10px;padding:0 16px;
+    background:#0d0f15cc;border-bottom:1px solid var(--line);backdrop-filter:blur(8px)
+  }
+  .title{font-size:22px;font-weight:800;letter-spacing:.2px}
+
+  /* НИЖНЯЯ ПАНЕЛЬ (fixed снизу) */
+  .tabbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:40;
+    display:grid; grid-template-columns:repeat(5,1fr);
+    height:var(--tabbar-h);
+    background:#0b0b0f;
+    border-top:1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tabbar a{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:4px; text-decoration:none; font-size:13px; font-weight:800;
+    color:#9ca3af;
+  }
+  .tabbar a svg{ color:#9ca3af }
+  .tabbar a.active{ color:#f59e0b }
+  .tabbar a.active svg{ color:#f59e0b }
+
+  /* Контент: добавили отступ снизу под панель */
+  main{
+    max-width:var(--maxw);margin:0 auto;
+    padding:16px 16px calc(24px + var(--tabbar-h) + env(safe-area-inset-bottom));
+  }
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .center{display:flex;flex-direction:column;align-items:center;text-align:center}
+
+  .avatar{width:120px;height:120px;border-radius:120px;overflow:hidden;background:#141823;display:grid;place-items:center;border:4px solid #0b0d13;box-shadow:0 6px 22px rgba(0,0,0,.35)}
+  .avatar img{width:100%;height:100%;object-fit:cover}
+  .name{margin-top:12px;font-weight:800;font-size:20px}
+  .email{color:#9aa3b2;font-size:13px;margin-top:2px}
+
+  .btn-xl{
+    margin-top:14px; display:inline-flex; align-items:center; justify-content:center;
+    height:52px; padding:0 18px; border-radius:12px; border:0;
+    background:#f59e0b; color:#1b1304; font-weight:900;
+    box-shadow:0 6px 16px rgba(245,158,11,.35);
+    cursor:pointer; transition:background .2s, transform .05s;
+  }
+  .btn-xl:hover{ background:#d97706 }
+  .btn-xl:active{ transform:scale(.98) }
+
+  .list{width:100%;max-width:640px;margin-top:16px;display:flex;flex-direction:column;gap:10px}
+  .cell{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px;border-radius:12px;
+    background:#1f2430;border:1px solid #394257;
+    color:#e9edf7;font-weight:700;
+    cursor:pointer;transition:background .15s,border-color .15s,transform .05s;
+  }
+  .cell:hover{ background:#2a3142; border-color:#4b5672 }
+  .cell:active{ transform:translateY(1px) }
+  .arrow{opacity:.9}
+
+  .logout{
+    margin-top:18px; display:flex; align-items:center; justify-content:center;
+    height:52px; border-radius:12px; border:0;
+    background:#ef4444; color:#fff; font-weight:900;
+    box-shadow:0 6px 16px rgba(239,68,68,.35);
+    cursor:pointer; transition:background .2s, transform .05s;
+  }
+  .logout:hover{ background:#dc2626 }
+  .logout:active{ transform:scale(.98) }
+
+  .label{color:#000000;}
+  .sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center}
+  .sheet .box{width:100%;max-width:var(--maxw);background:#0f121b;border-radius:18px 18px 0 0;border:1px solid var(--line);padding:16px}
+  .field{margin:12px 0}
+  .input{width:100%;height:var(--tap);border-radius:12px;border:1px solid var(--line);padding:0 14px;font-size:16px;background:#0b0d13;color:#e5e7eb}
+  .row{display:flex;gap:10px}
+  .btn{height:var(--tap);padding:0 14px;border-radius:12px;border:1px solid var(--line);background:#121621;color:#e5e7eb;font-weight:700;cursor:pointer}
+  .btn.primary{background:#f59e0b;border-color:#f59e0b;color:#1b1304}
+  .msg{display:none;margin:10px 0;padding:10px;border-radius:12px;font-size:14px}
+  .ok{background:#072118;border:1px solid #0a3e2c;color:#a7f3d0}
+  .err{background:#2a1313;border:1px solid #803131;color:#fecaca}
+
+  @media (min-width: 900px){ .title{font-size:24px} }
+</style>
+</head>
+<body>
+<header>
+  <div class="title">Профиль</div>
+  <div style="flex:1"></div>
+</header>
+
+<!-- НИЖНЯЯ НАВИГАЦИЯ (нужный порядок) -->
+<nav class="tabbar" id="tabbar">
+  <a href="/" data-path="/">
+    <svg width="26" height="26" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3 2 12h3v9h6v-6h2v6h6v-9h3z"/></svg>
+    <span>Лента</span>
+  </a>
+  <a href="/subs.html" data-path="/subs.html">
+    <svg width="26" height="26" viewBox="0 0 24 24"><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05A6.1 6.1 0 0 1 18 16.5V19h6v-2.5C24 14.57 20.33 13 16 13z"/></svg>
+    <span>Подписки</span>
+  </a>
+  <a href="/requests.html" data-path="/requests.html">
+    <svg width="26" height="26" viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10a2 2 0 0 1 2 2v14l-7-3l-7 3V5a2 2 0 0 1 2-2z"/></svg>
+    <span>Заявка всем</span>
+  </a>
+  <a href="/messenger.html" data-path="/messenger.html">
+    <svg width="26" height="26" viewBox="0 0 24 24"><path fill="currentColor" d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>
+    <span>Мессенджер</span>
+  </a>
+  <a href="/profile.html" data-path="/profile.html">
+    <svg width="26" height="26" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-5 0-9 2.5-9 5.5A1.5 1.5 0 0 0 4.5 21h15A1.5 1.5 0 0 0 21 19.5C21 16.5 17 14 12 14z"/></svg>
+    <span>Профиль</span>
+  </a>
+</nav>
+
+<main>
+  <div id="sess" class="banner" style="display:none">Сессия истекла. <a href="/login.html?next=/profile.html">Войти снова</a></div>
+
+  <div class="card center">
+    <div class="avatar" aria-hidden="true">
+      <img id="ava" alt="">
+    </div>
+    <div id="userName" class="name">—</div>
+    <div id="userEmail" class="email"></div>
+
+    <button id="btnEdit" class="btn-xl">Редактировать профиль</button>
+
+    <div class="list">
+      <div class="cell" id="rowOrders">
+        <div class="label">Мои заявки/заказы</div>
+        <div class="arrow">›</div>
+      </div>
+
+      <div class="cell" id="rowSupport">
+        <div class="label">Служба поддержки</div>
+        <div class="arrow">›</div>
+      </div>
+
+      <div class="cell" id="rowPolicy">
+        <div class="label">Политика конфиденциальности</div>
+        <div class="arrow">›</div>
+      </div>
+    </div>
+
+    <button id="btnLogout" class="logout">Выйти из аккаунта</button>
+  </div>
+</main>
+
+<!-- Редактировать профиль -->
+<div id="sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong id="editTitle">Редактировать профиль</strong>
+      <button id="btnClose" class="btn">Закрыть</button>
+    </div>
+    <div id="mErr" class="msg err"></div>
+    <div id="mOk" class="msg ok"></div>
+
+    <div class="field">
+      <label for="name" class="label" style="display:block;margin-bottom:8px;color:#9aa3b2">Отображаемое имя</label>
+      <input id="name" class="input" placeholder="Как к тебе обращаться?">
+    </div>
+
+    <div class="row" style="justify-content:flex-end;margin-top:10px">
+      <button id="btnSave" class="btn primary">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Подсветка активного пункта нижней панели */
+(function(){
+  const cur = (location.pathname.replace(/\/+$/,'') || '/');
+  document.querySelectorAll('#tabbar a').forEach(a=>{
+    const p = a.getAttribute('data-path');
+    const isHome = (p === '/' && (cur === '/' || cur === '/index.html'));
+    if (p === cur || isHome) a.classList.add('active');
+  });
+})();
+</script>
+
+<script>
+(()=> {
+  const $=s=>document.querySelector(s);
+  const state = { me:null };
+
+  const ava = seed => `https://api.dicebear.com/8.x/thumbs/svg?seed=${encodeURIComponent(seed||'mebel')}`;
+  function token(){ try{return localStorage.getItem('token')||''}catch{return''} }
+  function hdr(){ const h={'Content-Type':'application/json'}; const t=token(); if(t) h['Authorization']='Bearer '+t; return h }
+  function show(n){n&&(n.style.display='block')} function hide(n){n&&(n.style.display='none')}
+
+  async function j(path,opts){
+    opts=opts||{};
+    const r=await fetch(path,{method:opts.method||'GET',headers:Object.assign({},hdr(),opts.headers||{}),body:opts.body?JSON.stringify(opts.body):undefined,credentials:'include'});
+    const ct=r.headers.get('content-type')||''; const d=ct.includes('json')?await r.json().catch(()=> ({})):await r.text().catch(()=> '');
+    if(!r.ok){
+      if(r.status===401||r.status===403){ show($('#sess')); throw new Error('unauth') }
+      throw new Error((d&&d.error)||('HTTP '+r.status));
+    }
+    return d;
+  }
+
+  function displayName(me){
+    if (me.name && me.name.trim()) return me.name.trim();
+    if (me.email) return me.email.split('@')[0];
+    return 'пользователь';
+  }
+
+  async function loadMe(){
+    if (!token()) { location.replace('/login.html?next=/profile.html'); return }
+    try{
+      const me = await j('/api/me');
+      state.me = me;
+      hide($('#sess'));
+      $('#userName').textContent = displayName(me);
+      $('#userEmail').textContent = me.email||'';
+      $('#name').value = me.name||'';
+      $('#ava').src = ava(me.email||me.name||'mebel');
+      $('#ava').alt = (me.name||me.email||'user');
+    }catch(e){
+      if(e.message==='unauth') return;
+      show($('#sess'));
+    }
+  }
+
+  function openSheet(){ show($('#sheet')); $('#name').focus() }
+  function closeSheet(){ hide($('#sheet')); hide($('#mOk')); hide($('#mErr')) }
+  function setOk(m){ const n=$('#mOk'); n.textContent=m; show(n); hide($('#mErr')) }
+  function setErr(m){ const n=$('#mErr'); n.textContent=m; show(n); hide($('#mOk')) }
+
+  async function save(){
+    const name = $('#name').value.trim();
+    if (name.length < 2){ setErr('Имя слишком короткое'); return }
+    $('#btnSave').disabled=true; $('#btnSave').textContent='Сохраняем…';
+    try{
+      await j('/api/me',{method:'PUT',body:{name}});
+      setOk('Сохранено');
+      $('#userName').textContent = name;
+      setTimeout(closeSheet, 600);
+    }catch(e){
+      if (e.message==='unauth') setErr('Нужно войти заново');
+      else setErr(e.message||'Ошибка сохранения');
+    }finally{
+      $('#btnSave').disabled=false; $('#btnSave').textContent='Сохранить';
+    }
+  }
+
+  function initRows(){
+    $('#rowOrders').addEventListener('click', ()=> location.href='/requests.html');
+    $('#rowSupport').addEventListener('click', ()=> location.href='/support.html');
+    $('#rowPolicy').addEventListener('click', ()=> location.href='/legal/privacy.html');
+  }
+
+  function logout(){ try{ localStorage.removeItem('token'); }catch{} location.replace('/login.html') }
+
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    await loadMe();
+    initRows();
+
+    $('#btnEdit').onclick=openSheet;
+    $('#btnClose').onclick=closeSheet;
+    $('#sheet').addEventListener('click', e=>{ if (e.target.id==='sheet') closeSheet() });
+    $('#btnSave').onclick=save;
+    $('#btnLogout').onclick=logout;
+
+    window.addEventListener('storage', (e)=>{ if(e.key==='token' && e.newValue) loadMe() });
+  });
+})();
+</script>
+</body>
+</html>

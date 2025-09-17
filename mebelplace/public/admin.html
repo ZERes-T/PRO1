@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Админ — mebelplace</title>
+<link rel="stylesheet" href="/common.css">
+
+<style>
+  /* прячем страницу до проверки прав */
+  html.guard-hide { visibility: hidden; }
+
+  :root{ --bg:#0b0b0f; --panel:#111216; --line:#22252d; --muted:#9aa3b2; --accent:#f59e0b; --danger:#ef4444; --ok:#10b981 }
+  *{box-sizing:border-box}
+  html,body{height:100%;background:#000;color:#fff}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",sans-serif}
+  header{position:sticky;top:0;z-index:20;display:flex;gap:12px;align-items:center;height:56px;padding:0 16px;background:#0b0b0b;border-bottom:1px solid rgba(255,255,255,.06)}
+  .brand{font-weight:900}
+  .grow{flex:1}
+  .btn{height:36px;padding:0 12px;border-radius:10px;border:1px solid #23262d;background:#14171d;color:#fff;cursor:pointer}
+  .btn:hover{background:#191d24}
+  .btn.ok{border-color:transparent;background:var(--ok);color:#062a20}
+  .btn.warn{border-color:#322; background:#2a1515}
+  .btn.danger{border-color:transparent;background:var(--danger);color:#2b0c0c}
+  .btn.ghost{background:#fff;color:#000;border-color:#fff}
+
+  main{max-width:1200px;margin:0 auto;padding:16px}
+  .tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .tab{height:40px;padding:0 14px;border-radius:10px;border:1px solid #23262d;background:#111319;color:#fff;cursor:pointer;font-weight:800}
+  .tab.active{background:#fff;color:#000}
+
+  .card{background:#0e1015;border:1px solid #1f2330;border-radius:14px}
+  .head{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #1f2330}
+  .head .title{font-weight:900}
+  .tools{display:flex;gap:8px;margin-left:auto}
+  .body{padding:10px 14px}
+
+  .row{display:flex;gap:10px;align-items:center}
+  .input{height:40px;border:1px solid #23262d;border-radius:10px;background:#0b0c10;color:#fff;padding:0 12px}
+  .table{width:100%;border-collapse:collapse}
+  .table th,.table td{border-bottom:1px solid #1f2330;padding:10px 8px;text-align:left;vertical-align:top}
+  .table th{color:#c8cfda;font-weight:800}
+  .muted{color:#9aa3b2}
+  .tag{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a2e39;background:#141822;color:#dbe3f2;border-radius:999px;padding:2px 10px;font-size:12px}
+  .pill{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;border:1px solid #263042;font-size:12px}
+  .status-ok{background:#062b1c;color:#98f3c7;border-color:#0b5a38}
+  .status-warn{background:#2b1a06;color:#ffd39a;border-color:#5a3a0b}
+  .status-bad{background:#2b0f10;color:#ffbaba;border-color:#5a1c26}
+
+  .grid{display:grid;grid-template-columns: 1.3fr .7fr;gap:16px}
+  @media (max-width: 960px){ .grid{grid-template-columns: 1fr} .tools{flex-wrap:wrap} }
+
+  .hint{margin-top:8px;color:#aab4c5;font-size:13px}
+  .empty{padding:30px;text-align:center;color:#9aa3b2}
+</style>
+
+<script>
+/* ====== ОХРАНА через /api/admin/ping ====== */
+document.documentElement.classList.add('guard-hide');
+
+(function guard(){
+  const go = (u)=>location.replace(u);
+  const t  = localStorage.getItem('token');
+  if (!t) { go('/login.html?next=/admin.html'); return; }
+
+  fetch('/api/admin/ping', { headers: { 'Authorization': 'Bearer ' + t } })
+    .then(async r => {
+      if (r.status === 401) throw new Error('unauth');
+      if (r.status === 403) throw new Error('forbidden');
+      if (!r.ok) throw new Error('bad');
+      // ок — ты админ
+      window.ADMIN_OK = true;
+      window.dispatchEvent(new Event('admin:ready'));
+      document.documentElement.classList.remove('guard-hide');
+    })
+    .catch(err => {
+      document.documentElement.classList.remove('guard-hide');
+      if (err.message === 'unauth') return go('/login.html?next=/admin.html');
+      document.body.innerHTML =
+        '<div style="padding:24px;color:#fff">Нет доступа (нужна роль admin). '+
+        '<a href="/" style="color:#f59e0b">На главную</a></div>';
+    });
+})();
+</script>
+</head>
+<body>
+<header>
+  <div class="brand">mebelplace • админ</div>
+  <div class="grow"></div>
+  <a class="btn" href="/">На сайт</a>
+  <button id="btnLogout" class="btn">Выйти</button>
+</header>
+
+<main>
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="masters">Заявки мастеров</button>
+    <button class="tab" data-tab="orders">Уведомления заказов</button>
+    <button class="tab" data-tab="ads">Реклама</button>
+    <button class="tab" data-tab="mod">Модерация контента</button>
+    <button class="tab" data-tab="users">Пользователи</button>
+  </div>
+
+  <!-- Заявки мастеров -->
+  <section id="panel-masters" class="card" role="tabpanel">
+    <div class="head">
+      <div class="title">Заявки мастеров</div>
+      <div class="tools">
+        <input id="mSearch" class="input" placeholder="Поиск по почте/телефону/ID">
+        <button id="mReload" class="btn">Обновить</button>
+      </div>
+    </div>
+    <div class="body">
+      <table class="table" id="tblMasters">
+        <thead><tr>
+          <th>ID</th><th>Имя</th><th>Контакты</th><th>Ссылка на аккаунт</th><th>Комментарий</th><th>Статус</th><th>Действия</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="hint">Статусы: новая → принята / отклонена / доработка.</div>
+    </div>
+  </section>
+
+  <!-- Уведомления по заказам -->
+  <section id="panel-orders" class="card" role="tabpanel" hidden>
+    <div class="head">
+      <div class="title">Уведомления заказов</div>
+      <div class="tools">
+        <select id="oFilter" class="input">
+          <option value="">Все</option>
+          <option value="new">Новые</option>
+          <option value="accepted">Приняты</option>
+          <option value="rework">Доработка</option>
+          <option value="cancelled">Отменены</option>
+        </select>
+        <button id="oReload" class="btn">Обновить</button>
+      </div>
+    </div>
+    <div class="body">
+      <table class="table" id="tblOrders">
+        <thead><tr>
+          <th>ID</th><th>Клиент</th><th>Мастер</th><th>Описание</th><th>Статус</th><th>Действия</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Реклама -->
+  <section id="panel-ads" class="card" role="tabpanel" hidden>
+    <div class="head"><div class="title">Реклама</div>
+      <div class="tools">
+        <input id="adTitle" class="input" placeholder="Заголовок баннера">
+        <input id="adLink" class="input" placeholder="Ссылка https://…">
+        <button id="adCreate" class="btn ok">Создать</button>
+      </div>
+    </div>
+    <div class="body">
+      <table class="table" id="tblAds">
+        <thead><tr><th>ID</th><th>Заголовок</th><th>Ссылка</th><th>Показы</th><th>Клики</th><th>Статус</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Модерация контента -->
+  <section id="panel-mod" class="card" role="tabpanel" hidden>
+    <div class="head"><div class="title">Модерация контента</div>
+      <div class="tools">
+        <button id="mdReload" class="btn">Обновить</button>
+      </div>
+    </div>
+    <div class="body">
+      <table class="table" id="tblMod">
+        <thead><tr><th>ID</th><th>Автор</th><th>Тип</th><th>Превью</th><th>Причина</th><th>Статус</th><th>Действия</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Пользователи -->
+  <section id="panel-users" class="card" role="tabpanel" hidden>
+    <div class="head"><div class="title">Пользователи</div>
+      <div class="tools">
+        <input id="uSearch" class="input" placeholder="Поиск по почте/ID/имени">
+        <button id="uReload" class="btn">Обновить</button>
+      </div>
+    </div>
+    <div class="body">
+      <table class="table" id="tblUsers">
+        <thead><tr><th>ID</th><th>Имя</th><th>Почта</th><th>Роль</th><th>Создан</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="hint">Удаление пользователя — безвозвратно (в API желательно soft-delete/архив).</div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ====== ЛОГИКА АДМИНКИ (после admin:ready) ====== */
+(function(){
+  if (!window.ADMIN_OK) {
+    window.addEventListener('admin:ready', initAdmin, { once:true });
+  } else {
+    initAdmin();
+  }
+
+  function initAdmin(){
+    const $ = s => document.querySelector(s);
+    const token = () => localStorage.getItem('token') || '';
+    const hdr  = () => ({ 'Content-Type':'application/json', 'Authorization':'Bearer '+token() });
+    const apiGet = (p)=> fetch(p,{headers:hdr()});
+    const api   = async (p,opts={})=>{
+      const r = await fetch(p,{headers:hdr(), ...opts});
+      if (r.status===401) { location.replace('/login.html?next=/admin.html'); throw 0; }
+      return r;
+    };
+    const fmt = (d)=> d ? new Date(d).toLocaleString('ru-RU') : '—';
+    const esc = (s)=> String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+    // ——— Tabs
+    document.querySelectorAll('.tab').forEach(t=>{
+      t.addEventListener('click', ()=>{
+        document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+        t.classList.add('active');
+        const key=t.dataset.tab;
+        document.querySelectorAll('[role="tabpanel"]').forEach(p=>p.hidden=true);
+        $('#panel-'+key).hidden=false;
+      });
+    });
+
+    // ——— Masters
+    async function loadMasters(q=''){
+      try{
+        const r = await apiGet('/api/admin/masters'+(q?('?q='+encodeURIComponent(q)):'')); 
+        const js = r.ok ? await r.json() : {items:[]};
+        fillMasters(js.items||[]);
+      }catch{ fillMasters(mockMasters()); }
+    }
+    function fillMasters(items){
+      const tb = $('#tblMasters tbody'); tb.innerHTML='';
+      if(!items.length){ tb.innerHTML = `<tr><td colspan="7" class="empty">Заявок нет</td></tr>`; return; }
+      for(const x of items){
+        const tr=document.createElement('tr');
+        tr.innerHTML = `
+          <td>${x.id}</td>
+          <td>${esc(x.name||'')}</td>
+          <td><div>${esc(x.phone||'—')}</div><div class="muted">${esc(x.email||'')}</div></td>
+          <td>${x.account_url?(`<a class="tag" href="${x.account_url}" target="_blank" rel="noopener">Открыть</a>`):'<span class="muted">—</span>'}</td>
+          <td>${esc(x.note||'')}</td>
+          <td>${statusBadge(x.status||'new')}</td>
+          <td class="row">
+            <button class="btn ok" data-act="approve">Принять</button>
+            <button class="btn" data-act="rework">Доработка</button>
+            <button class="btn danger" data-act="reject">Отклонить</button>
+          </td>`;
+        tr.addEventListener('click', async (e)=>{
+          const b = e.target.closest('button'); if(!b) return;
+          try{ const r=await api('/api/admin/masters/'+x.id+'/'+b.dataset.act,{method:'POST'}); if(r.ok) loadMasters($('#mSearch').value.trim()); }catch{}
+        });
+        tb.appendChild(tr);
+      }
+    }
+
+    // ——— Orders
+    async function loadOrders(filter=''){
+      try{
+        const r = await apiGet('/api/admin/orders'+(filter?('?status='+encodeURIComponent(filter)):'')); 
+        const js = r.ok ? await r.json() : {items:[]};
+        fillOrders(js.items||[]);
+      }catch{ fillOrders(mockOrders()); }
+    }
+    function fillOrders(items){
+      const tb=$('#tblOrders tbody'); tb.innerHTML='';
+      if(!items.length){ tb.innerHTML='<tr><td colspan="6" class="empty">Пусто</td></tr>'; return; }
+      for(const o of items){
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${o.id}</td>
+          <td>${esc(o.customer||'')}</td>
+          <td>${esc(o.master||'')}</td>
+          <td>${esc(o.title||'')}</td>
+          <td>${statusBadge(o.status||'new')}</td>
+          <td class="row">
+            <button class="btn ok" data-act="accept">Принять</button>
+            <button class="btn" data-act="rework">Доработка</button>
+            <button class="btn warn" data-act="cancel">Отмена</button>
+          </td>`;
+        tr.addEventListener('click', async (e)=>{
+          const b=e.target.closest('button'); if(!b) return;
+          try{ const r=await api('/api/admin/orders/'+o.id+'/'+b.dataset.act,{method:'POST'}); if(r.ok) loadOrders($('#oFilter').value); }catch{}
+        });
+        tb.appendChild(tr);
+      }
+    }
+
+    // ——— Ads
+    async function loadAds(){
+      try{
+        const r = await apiGet('/api/admin/ads'); const js = r.ok ? await r.json() : {items:[]};
+        fillAds(js.items||[]);
+      }catch{ fillAds(mockAds()); }
+    }
+    function fillAds(items){
+      const tb=$('#tblAds tbody'); tb.innerHTML='';
+      if(!items.length){ tb.innerHTML='<tr><td colspan="7" class="empty">Нет записей</td></tr>'; return; }
+      for(const a of items){
+        const tr=document.createElement('tr');
+        tr.innerHTML = `
+          <td>${a.id}</td>
+          <td>${esc(a.title||'')}</td>
+          <td><a href="${a.link||'#'}" target="_blank" rel="noopener">${esc(a.link||'—')}</a></td>
+          <td>${a.impressions||0}</td>
+          <td>${a.clicks||0}</td>
+          <td>${a.enabled?'<span class="pill status-ok">вкл</span>':'<span class="pill status-bad">выкл</span>'}</td>
+          <td class="row">
+            <button class="btn" data-act="toggle">${a.enabled?'Выключить':'Включить'}</button>
+            <button class="btn danger" data-act="delete">Удалить</button>
+          </td>`;
+        tr.addEventListener('click', async (e)=>{
+          const b=e.target.closest('button'); if(!b) return;
+          const act=b.dataset.act; const id=a.id;
+          try{
+            const url = act==='toggle'?('/api/admin/ads/'+id+'/toggle'):('/api/admin/ads/'+id);
+            const method = act==='toggle'?'POST':'DELETE';
+            const r = await api(url,{method});
+            if(r.ok) loadAds();
+          }catch{}
+        });
+        tb.appendChild(tr);
+      }
+    }
+    $('#adCreate').onclick = async ()=>{
+      const title=$('#adTitle').value.trim(), link=$('#adLink').value.trim();
+      if(!title||!link) return alert('Укажи заголовок и ссылку');
+      try{
+        const r = await api('/api/admin/ads',{method:'POST',body:JSON.stringify({title,link})});
+        if(r.ok){ $('#adTitle').value=''; $('#adLink').value=''; loadAds(); }
+      }catch{}
+    };
+
+    // ——— Moderation
+    async function loadMod(){
+      try{
+        const r = await apiGet('/api/admin/modqueue'); const js = r.ok ? await r.json() : {items:[]};
+        fillMod(js.items||[]);
+      }catch{ fillMod(mockMod()); }
+    }
+    function fillMod(items){
+      const tb=$('#tblMod tbody'); tb.innerHTML='';
+      if(!items.length){ tb.innerHTML='<tr><td colspan="7" class="empty">Очередь пустая</td></tr>'; return; }
+      for(const m of items){
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${m.id}</td>
+          <td>${esc(m.author||'')}</td>
+          <td>${esc(m.kind||'video')}</td>
+          <td>${m.thumb?('<img src="'+m.thumb+'" alt="" style="width:80px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #1f2330">'):'—'}</td>
+          <td class="muted">${esc(m.reason||'—')}</td>
+          <td>${statusBadge(m.status||'pending')}</td>
+          <td class="row">
+            <button class="btn ok" data-act="approve">Одобрить</button>
+            <button class="btn danger" data-act="remove">Удалить</button>
+          </td>`;
+        tr.addEventListener('click', async (e)=>{
+          const b=e.target.closest('button'); if(!b) return;
+          try{ const r=await api('/api/admin/modqueue/'+m.id+'/'+b.dataset.act,{method:'POST'}); if(r.ok) loadMod(); }catch{}
+        });
+        tb.appendChild(tr);
+      }
+    }
+
+    // ——— Users
+    async function loadUsers(q=''){
+      try{
+        const r = await apiGet('/api/admin/users'+(q?('?q='+encodeURIComponent(q)):'')); 
+        const js = r.ok ? await r.json() : {items:[]};
+        fillUsers(js.items||[]);
+      }catch{ fillUsers(mockUsers()); }
+    }
+    function fillUsers(items){
+      const tb=$('#tblUsers tbody'); tb.innerHTML='';
+      if(!items.length){ tb.innerHTML='<tr><td colspan="6" class="empty">Ничего не найдено</td></tr>'; return; }
+      for(const u of items){
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${u.id}</td>
+          <td>${esc(u.name||'')}</td>
+          <td>${esc(u.email||'')}</td>
+          <td>${esc(u.role||'user')}</td>
+          <td class="muted">${fmt(u.created_at)}</td>
+          <td><button class="btn danger" data-id="${u.id}">Удалить</button></td>`;
+        tr.addEventListener('click', async (e)=>{
+          const b=e.target.closest('button'); if(!b) return;
+          if(!confirm('Удалить пользователя '+(u.email||u.id)+'?')) return;
+          try{ const r=await api('/api/admin/users/'+u.id,{method:'DELETE'}); if(r.ok) loadUsers($('#uSearch').value.trim()); }catch{}
+        });
+        tb.appendChild(tr);
+      }
+    }
+
+    function statusBadge(s){
+      const map={ new:['Новая','status-warn'], accepted:['Принята','status-ok'], rework:['Доработка','status-warn'], cancelled:['Отменена','status-bad'], pending:['На модерации','status-warn'], approved:['Одобрено','status-ok'], rejected:['Отклонено','status-bad'] };
+      const t=map[s]||[s,'']; return `<span class="pill ${t[1]}">${t[0]}</span>`;
+    }
+
+    // ——— Search / reload
+    $('#mReload').onclick=()=>loadMasters($('#mSearch').value.trim());
+    $('#mSearch').addEventListener('keydown',e=>{ if(e.key==='Enter') loadMasters(e.target.value.trim()) });
+    $('#oReload').onclick=()=>loadOrders($('#oFilter').value);
+    $('#oFilter').onchange=()=>loadOrders($('#oFilter').value);
+    $('#mdReload').onclick=loadMod;
+    $('#uReload').onclick=()=>loadUsers($('#uSearch').value.trim());
+    $('#uSearch').addEventListener('keydown',e=>{ if(e.key==='Enter') loadUsers(e.target.value.trim()) });
+
+    // ——— logout
+    $('#btnLogout').onclick=()=>{ localStorage.removeItem('token'); location.replace('/login.html?next=/admin.html') };
+
+    // ——— first load
+    loadMasters(); loadOrders(); loadAds(); loadMod(); loadUsers();
+
+    // ——— mocks (fallback, если API недоступно)
+    function mockMasters(){ return [
+      {id:101,name:'Иван',phone:'+7 777 123-45-67',email:'ivan@example.com',account_url:'https://example.com/u/101',note:'Опыт 5 лет',status:'new'},
+      {id:102,name:'Сергей',phone:'+7 700 222-33-44',email:'serg@example.com',account_url:'',note:'Корпусная мебель',status:'rework'},
+    ]; }
+    function mockOrders(){ return [
+      {id:501,customer:'Мария',master:'Иван',title:'Шкаф-купе',status:'new'},
+      {id:502,customer:'Дмитрий',master:'Сергей',title:'Кухня',status:'accepted'},
+    ]; }
+    function mockAds(){ return [
+      {id:1,title:'Сентябрьская акция',link:'https://mebelplace.com.kz/',impressions:1200,clicks:74,enabled:true},
+      {id:2,title:'Набор мастеров',link:'https://mebelplace.com.kz/for-masters',impressions:800,clicks:21,enabled:false},
+    ]; }
+    function mockMod(){ return [
+      {id:9001,author:'user42',kind:'video',thumb:'/media/sample.jpg',reason:'проверка',status:'pending'},
+    ]; }
+    function mockUsers(){ return [
+      {id:1,name:'Admin',email:'admin@site',role:'admin',created_at:Date.now()-86400000},
+      {id:2,name:'User',email:'user@site',role:'user',created_at:Date.now()},
+    ]; }
+  } // /initAdmin
+})();
+</script>
+</body>
+</html>
